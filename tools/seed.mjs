@@ -1,4 +1,4 @@
-// Sube las fotos de data/seed.json (las 37 primeras, del RTF de pepe del 6 de
+// Sube las fotos de data/seed.json (las primeras, del RTF de pepe del 6 de
 // noviembre de 2026) por la misma API que usa /admin/, así entran igual que las
 // que suba él. Las pasa antes a webp ≤ 2000 px, q85 (lo de imgToWeb), con sharp.
 //

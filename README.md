@@ -10,12 +10,13 @@ Es el patrón de **lasadcum** (JAMstack, `patrones.md` §10b) llevado a toda la 
   `/admin/`, `/api/*` y `/media/*`. Lo estático, de `public/`.
 - **Los textos en D1** (`projects`, `images`; las tablas se crean solas) y **las fotos en R2**
   (`pepe-archive`, `<año>/<uuid>.webp`). Nada del archivo pasa por GitHub.
-- **`/admin/`** con contraseña (secreto `PASSWORD`): la foto se comprime en el navegador
+- **superpepe** (`/admin/`) con contraseña (secreto `PASSWORD`): la foto se comprime en el navegador
   (imgToWeb: webp ≤ 2000 px, q85), pepe pone el proyecto, la fecha y los tags. Si el proyecto
-  ya existe, la foto se le añade.
+  ya existe, la foto se le añade. Ahí también elige el orden de la web (`settings.order` en
+  D1: más reciente, el de por defecto; más antiguo; a–z).
 - `data/site.json`: el título y la intro (`intro`, una lista de párrafos). Mientras esté
   vacía, el bloque «pepe» no sale. Sin `url`, `noindex`.
-- `data/seed.json`: las 37 primeras fotos (RTF del 6 de noviembre de 2026), emparejadas por
+- `data/seed.json`: las primeras fotos (RTF del 6 de noviembre de 2026; sin «1-01-25», quitada el 2026-11-12), emparejadas por
   orden con los archivos. Se suben con `tools/seed.mjs` por la misma API que `/admin/`.
 
 Para pepe: **[GUIA.md](GUIA.md)**.

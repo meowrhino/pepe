@@ -26,8 +26,8 @@ h1, h2 {
 .intro { max-width: 52ch; margin-bottom: 3rem; }
 .intro p { margin: 0 0 1rem; }
 
-/* el archivo: nombre | tags | fechas, en tres columnas */
-/* una sola rejilla para toda la lista: la columna del nombre mide lo que el más largo */
+/* el archivo: nombre | tags | fechas, en tres columnas.
+   Una sola rejilla para toda la lista: la columna del nombre mide lo que el más largo */
 .archive {
   list-style: none; margin: 0; padding: 0;
   display: grid;
@@ -38,12 +38,10 @@ h1, h2 {
 .archive .title { grid-column: 1; }
 .archive .tags { grid-column: 2; }
 .archive .dates { grid-column: 3; }
-.archive .year .dates { margin-top: 1.55em; }
-.archive .year:first-child .dates { margin-top: 0; }
 .archive .dates a:hover, .archive .dates a:focus-visible, .archive .dates a.activa { text-decoration: underline; }
 
-/* la foto: al pasar por una fecha, a un lado; al hacer clic (o tocar en el móvil), en grande */
-/* al pasar: junto al cursor (la coloca js/main.js) */
+/* la foto: al pasar por una fecha, junto al cursor (la coloca js/main.js);
+   al hacer clic (o tocar en el móvil), en grande */
 .preview {
   position: fixed;
   top: 0; left: 0;
@@ -64,35 +62,73 @@ h1, h2 {
 
 @media (max-width: 760px) {
   body { padding: 2rem 1rem 4rem; font-size: 14px; }
-  /* en el móvil, las fechas debajo del nombre */
-  .archive { grid-template-columns: 1fr auto; column-gap: 2ch; }
-  .archive .title { grid-column: 1; }
+  /* en el móvil: el nombre en una línea; debajo, a la derecha, los tags y las fechas */
+  .archive { grid-template-columns: 1fr auto auto; column-gap: 2ch; }
+  .archive .title { grid-column: 1 / -1; }
   .archive .tags { grid-column: 2; color: var(--gris); }
-  .archive .dates { grid-column: 1 / -1; margin-bottom: .6em; }
+  .archive .dates { grid-column: 3; text-align: right; }
+  .archive .tags, .archive .dates { margin-bottom: .6em; }
   .preview.fija { padding: 1rem; }
 }
 
-/* /admin/ y /login/ */
-.admin header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-.admin h1 { font-size: 2rem; }
-form.nueva, .login form { display: grid; gap: .8rem; max-width: 34rem; margin-bottom: 1rem; }
-label { display: grid; gap: .2rem; }
-input, button { font: inherit; color: inherit; }
-input { padding: .4rem .5rem; border: 1px solid var(--fg); background: var(--bg); border-radius: 0; min-width: 0; }
-button { padding: .4rem .8rem; border: 1px solid var(--fg); background: var(--bg); cursor: pointer; border-radius: 0; }
-button:hover { background: var(--fg); color: var(--bg); }
-button:disabled { opacity: .4; cursor: wait; }
-.estado:empty, .nota { color: var(--gris); }
-.proyectos { list-style: none; padding: 0; margin: 3rem 0 0; display: grid; gap: 2rem; }
-form.proyecto { display: grid; grid-template-columns: 1fr 14rem auto; gap: .5rem; }
-.fotos { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: 1rem; }
-.fotos li { display: grid; gap: .3rem; width: 11rem; }
-.fotos img { width: 100%; height: 8rem; object-fit: contain; object-position: left bottom; background: #f4f4f4; }
-form.foto { display: flex; flex-wrap: wrap; gap: .3rem; }
-form.foto input { width: 100%; }
-.guardado { outline: 2px solid var(--fg); }
+/* superpepe (/admin/) y /login/: la misma letra y el mismo blanco y negro que la web.
+   Casillas como líneas de texto (solo la raya de abajo) y botones como texto entre [ ] */
+.admin { max-width: 60rem; }
+.admin header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 2rem; margin-bottom: 2rem; }
+.admin header h1 { margin: 0 0 .5rem; }
+.admin nav { display: flex; gap: 2ch; align-items: baseline; }
+.admin nav a:hover { text-decoration: underline; }
+input, button { font: inherit; color: inherit; letter-spacing: inherit; }
+input {
+  padding: .25rem 0; min-width: 0;
+  border: 0; border-bottom: 1px solid var(--fg); border-radius: 0;
+  background: transparent;
+}
+input:focus { outline: none; border-bottom-width: 2px; margin-bottom: -1px; }
+input::placeholder { color: var(--gris); }
+button { padding: 0; border: 0; background: none; cursor: pointer; white-space: nowrap; }
+button::before { content: "[ "; }
+button::after { content: " ]"; }
+button:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
+button:disabled { color: var(--gris); cursor: default; }
+button:focus-visible { outline: 1px dotted var(--fg); outline-offset: 2px; }
+
+form.nueva, .login form { display: grid; gap: 1.2rem; max-width: 34rem; margin-bottom: 1rem; }
+label { display: grid; gap: .1rem; }
+.elegir { cursor: pointer; justify-items: start; gap: .6rem; }
+.elegir input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.elegir span { border: 1px dashed var(--fg); padding: 2rem 0; width: 100%; text-align: center; }
+.elegir:hover span, .elegir input:focus-visible + span { border-style: solid; }
+.previa { max-width: 100%; max-height: 14rem; }
+.elegir:has(.previa:not([hidden])) span { padding: .4rem 0; }
+.existe { margin: -.9rem 0 0; color: var(--gris); }
+.publicar { justify-self: start; font-size: 1.25rem; }
+.estado:empty { display: none; }
 .error { color: #c00; }
+
+.herramientas {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem 3ch;
+  margin: 3rem 0 0; padding-top: 1rem; border-top: 1px solid var(--fg);
+}
+.herramientas p { margin: 0; }
+.orden button { color: var(--gris); }
+.orden button::before, .orden button::after { content: none; }
+.orden button[aria-pressed="true"] { color: var(--fg); text-decoration: underline; }
+.buscar { width: 16ch; }
+.herramientas .cuenta { color: var(--gris); margin-left: auto; }
+
+.proyectos { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: 2.2rem; }
+form.proyecto { display: grid; grid-template-columns: 1fr 16ch auto; gap: 2ch; align-items: baseline; }
+.fotos { list-style: none; padding: 0; margin: .8rem 0 0; display: flex; flex-wrap: wrap; gap: 1.2rem; }
+.fotos li { display: grid; gap: .3rem; width: 10rem; align-content: start; }
+.fotos img { display: block; width: 100%; height: 7rem; object-fit: contain; object-position: left bottom; }
+form.foto { display: flex; flex-wrap: wrap; gap: .2rem 1.5ch; }
+form.foto input { width: 100%; }
+.borrar { color: var(--gris); }
+
 @media (max-width: 760px) {
-  form.proyecto { grid-template-columns: 1fr; }
-  .fotos li { width: calc(50% - .5rem); }
+  form.proyecto { grid-template-columns: 1fr auto; }
+  form.proyecto [name=tags] { grid-column: 1; grid-row: 2; }
+  .fotos li { width: calc(50% - .6rem); }
+  .herramientas .cuenta { margin-left: 0; width: 100%; }
 }

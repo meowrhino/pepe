@@ -36,16 +36,15 @@ function fila(p) {
   return `<li><span class="title">${esc(p.title)}</span><span class="tags">${tagsHtml(p.tags)}</span><span class="dates">${fechas}</span></li>`;
 }
 
-/** La lista, con una fila con el año cada vez que cambia (el de la primera foto del proyecto). */
-export function archivo(proyectos) {
-  let año = '';
-  return proyectos.map((p) => {
-    const a = p.images[0].date.slice(0, 4);
-    const cabecera = a !== año ? `<li class="year"><span class="dates">${a}</span></li>\n` : '';
-    año = a;
-    return cabecera + fila(p);
-  }).join('\n');
-}
+export const archivo = (proyectos) => proyectos.map(fila).join('\n');
+
+/** Los órdenes que pepe elige en superpepe (D1 → settings.order). Dentro de un proyecto, las fechas van siempre de la más antigua a la más nueva. */
+export const ORDENES = {
+  reciente: { nombre: 'más reciente', cmp: (a, b) => b.images.at(-1).date.localeCompare(a.images.at(-1).date) || b.id - a.id },
+  antiguo: { nombre: 'más antiguo', cmp: (a, b) => a.images[0].date.localeCompare(b.images[0].date) || a.id - b.id },
+  alfa: { nombre: 'a–z', cmp: (a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base', numeric: true }) || a.id - b.id },
+};
+export const ordenar = (proyectos, orden) => [...proyectos].sort((ORDENES[orden] ?? ORDENES.reciente).cmp);
 
 function cabeza(site, titulo, { index = true } = {}) {
   const robots = site.url && index ? '' : '\n<meta name="robots" content="noindex">';
@@ -80,41 +79,54 @@ ${archivo(proyectos)}
 </html>`;
 }
 
-export function admin(site, proyectos, hoy) {
+export function admin(site, proyectos, hoy, orden) {
   const titulos = [...new Set(proyectos.map((p) => p.title))];
-  const lista = proyectos.map((p) => `<li>
+  const fotos = proyectos.reduce((n, p) => n + p.images.length, 0);
+  // data-title: para el buscador (public/js/admin.js)
+  const lista = proyectos.map((p) => `<li data-title="${esc(p.title)}">
 <form class="proyecto" data-id="${p.id}">
 <input name="title" value="${esc(p.title)}" aria-label="nombre del proyecto" required maxlength="200">
-<input name="tags" value="${esc(p.tags)}" aria-label="tags" placeholder="tags">
-<button>guardar</button>
+<input name="tags" value="${esc(p.tags)}" aria-label="tags" placeholder="sin tags">
+<button disabled>guardar</button>
 </form>
 <ul class="fotos">
 ${p.images.map((i) => `<li>
-<a href="${esc(i.src)}" target="_blank"><img src="${esc(i.src)}" alt="" loading="lazy" width="${i.width}" height="${i.height}"></a>
+<a href="${esc(i.src)}" target="_blank" title="abrir la foto"><img src="${esc(i.src)}" alt="" loading="lazy" width="${i.width}" height="${i.height}"></a>
 <form class="foto" data-id="${i.id}">
 <input type="date" name="date" value="${i.date}" aria-label="fecha" required>
-<button>guardar</button>
+<button disabled>guardar</button>
 <button type="button" class="borrar">borrar</button>
 </form>
 </li>`).join('\n')}
 </ul>
 </li>`).join('\n');
-  return `${cabeza(site, `${site.title} · admin`, { index: false })}
+  return `${cabeza(site, 'superpepe', { index: false })}
 <body class="admin">
 <header>
-<h1>${esc(site.title)} · admin</h1>
-<form method="post" action="/api/logout"><button>salir</button></form>
+<h1>superpepe</h1>
+<nav><a href="/" target="_blank">ver la web ↗</a> <form method="post" action="/api/logout"><button>salir</button></form></nav>
 </header>
 <form class="nueva" action="/api/images">
-<label>foto <input type="file" name="image" accept="image/*,.heic,.heif,.tif,.tiff" required></label>
-<label>proyecto <input name="title" list="titulos" required maxlength="200" autocomplete="off"></label>
+<label class="elegir">
+<input type="file" name="image" accept="image/*,.heic,.heif,.tif,.tiff" required>
+<span>+ foto</span>
+<img class="previa" alt="" hidden>
+</label>
+<label>proyecto <input name="title" list="titulos" required maxlength="200" autocomplete="off" placeholder="nombre del proyecto"></label>
 <datalist id="titulos">${titulos.map((t) => `<option value="${esc(t)}">`).join('')}</datalist>
+<p class="existe" hidden>ya existe: la foto se le añade</p>
 <label>fecha <input type="date" name="date" value="${hoy}" required></label>
 <label>tags <input name="tags" placeholder="#paperwork" autocomplete="off"></label>
-<button>publicar</button>
+<button class="publicar">publicar</button>
 <p class="estado" role="status"></p>
 </form>
-<p class="nota">Si el proyecto ya existe (sale en la lista al escribir), la foto se le añade. Para cambiar un nombre, tags o fechas: abajo, y «guardar».</p>
+<div class="herramientas">
+<p class="orden">orden de la web:
+${Object.entries(ORDENES).map(([k, o]) => `<button type="button" data-orden="${k}" aria-pressed="${k === (ORDENES[orden] ? orden : 'reciente')}">${o.nombre}</button>`).join(' / ')}
+</p>
+<input type="search" class="buscar" placeholder="buscar" aria-label="buscar un proyecto">
+<p class="cuenta">${proyectos.length} proyectos · ${fotos} fotos</p>
+</div>
 <ol class="proyectos">
 ${lista}
 </ol>

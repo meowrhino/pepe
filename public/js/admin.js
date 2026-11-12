@@ -89,17 +89,59 @@ nueva?.addEventListener('submit', async (e) => {
   }
 });
 
-// corregir un proyecto (nombre, tags) o la fecha de una foto
+// la foto elegida, en pequeño, antes de publicar
+const previa = nueva?.querySelector('.previa');
+nueva?.image.addEventListener('change', () => {
+  const file = nueva.image.files[0];
+  if (previa.src) URL.revokeObjectURL(previa.src);
+  previa.hidden = !file;
+  if (file) previa.src = URL.createObjectURL(file);   // HEIC en Chrome no se ve aquí, pero se sube bien
+});
+
+// avisa si el nombre es de un proyecto que ya existe (la foto se le añadirá)
+const existe = nueva?.querySelector('.existe');
+const titulos = () => new Set([...document.querySelectorAll('#titulos option')].map((o) => o.value));
+nueva?.title.addEventListener('input', () => { existe.hidden = !titulos().has(nueva.title.value.replace(/\s+/g, ' ').trim()); });
+
+// corregir un proyecto (nombre, tags) o la fecha de una foto: «guardar» se enciende al cambiar algo
 for (const [sel, ruta] of [['form.proyecto', 'projects'], ['form.foto', 'images']]) {
-  document.querySelectorAll(sel).forEach((f) => f.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await enviar(`/api/${ruta}/${f.dataset.id}`, 'PATCH', new FormData(f));
-      f.classList.add('guardado');
-      setTimeout(() => f.classList.remove('guardado'), 1200);
-    } catch (err) { alert(`no se ha guardado: ${err.message}`); }
-  }));
+  document.querySelectorAll(sel).forEach((f) => {
+    const boton = f.querySelector('button:not(.borrar)');
+    f.addEventListener('input', () => { boton.disabled = false; boton.textContent = 'guardar'; });
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      boton.disabled = true;
+      try {
+        await enviar(`/api/${ruta}/${f.dataset.id}`, 'PATCH', new FormData(f));
+        boton.textContent = 'guardado ✓';
+        if (ruta === 'projects') f.closest('li').dataset.title = f.title.value;
+      } catch (err) {
+        boton.disabled = false;
+        alert(`no se ha guardado: ${err.message}`);
+      }
+    });
+  });
 }
+
+// el orden de la web (y de esta lista): se guarda en el servidor y se recarga
+document.querySelectorAll('[data-orden]').forEach((b) => b.addEventListener('click', async () => {
+  if (b.getAttribute('aria-pressed') === 'true') return;
+  const datos = new FormData();
+  datos.set('order', b.dataset.orden);
+  try {
+    await enviar('/api/settings', 'PATCH', datos);
+    location.reload();
+  } catch (err) { alert(`no se ha cambiado el orden: ${err.message}`); }
+}));
+
+const lista = document.querySelector('.proyectos');
+
+// buscar: deja solo los proyectos cuyo nombre o tags lo contienen (sin mirar acentos)
+const plano = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+document.querySelector('.buscar')?.addEventListener('input', (e) => {
+  const q = plano(e.target.value.trim());
+  for (const li of lista.children) li.hidden = !!q && !plano(`${li.dataset.title} ${li.querySelector('[name=tags]').value}`).includes(q);
+});
 
 document.querySelectorAll('.borrar').forEach((b) => b.addEventListener('click', async () => {
   if (!confirm('¿Borrar esta foto? Deja de salir en la web (se puede recuperar pidiéndolo).')) return;

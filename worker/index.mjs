@@ -15,7 +15,7 @@
    Es el patrón de lasadcum (JAMstack, patrones §10b).
    ============================================================ */
 import site from '../data/site.json';
-import { agrupar, limpiarTags, portada, admin } from './paginas.mjs';
+import { agrupar, limpiarTags, portada, admin, ordenar, ORDENES } from './paginas.mjs';
 
 const SESION = 'pepe';
 const DIAS = 60;
@@ -43,12 +43,17 @@ function db(env) {
       created_at TEXT NOT NULL DEFAULT (${AHORA}),
       deleted_at TEXT)`),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_images_date ON images(date, id)'),
+    // lo que pepe elige en superpepe y vale para toda la web (de momento, solo "order")
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)'),
   ]).catch((e) => { preparada = null; throw e; });
   return preparada.then(() => env.DB);
 }
 
+const orden = async (env) => (await (await db(env)).prepare("SELECT value FROM settings WHERE key = 'order'").first('value')) ?? 'reciente';
+// la lista en el orden que pepe ha elegido
+const archivo = async (env) => ordenar(await fotos(env), await orden(env));
 // un proyecto sin fotos vivas no sale: borrar su última foto lo quita de la lista
-const archivo = async (env) => agrupar((await (await db(env)).prepare(
+const fotos = async (env) => agrupar((await (await db(env)).prepare(
   `SELECT p.id AS pid, p.title, p.tags, i.id, i.date, i.image_key, i.width, i.height
    FROM images i JOIN projects p ON p.id = i.project_id
    WHERE i.deleted_at IS NULL ORDER BY i.date, i.id`).all()).results);
@@ -184,7 +189,7 @@ export default {
 
       // a partir de aquí, con la contraseña
       const ok = await dentro(req, env);
-      if (p === '/admin/') return ok ? html(admin(site, await archivo(env), new Date().toISOString().slice(0, 10))) : ir('/login/');
+      if (p === '/admin/') return ok ? html(admin(site, await archivo(env), new Date().toISOString().slice(0, 10), await orden(env))) : ir('/login/');
       if (!p.startsWith('/api/')) return env.ASSETS.fetch(req);
       if (!ok) return texto('hay que entrar con la contraseña (vuelve a /admin/)', 401);
       if (p === '/api/export' && m === 'GET') {
@@ -198,6 +203,12 @@ export default {
       if (tipo === 'projects' && m === 'PATCH') return await editarProyecto(Number(id), req, env);
       if (tipo === 'images' && m === 'PATCH') return await editarFoto(Number(id), req, env);
       if (tipo === 'images' && m === 'DELETE') return await borrarFoto(Number(id), env);
+      if (p === '/api/settings' && m === 'PATCH') {
+        const o = String((await req.formData()).get('order') || '');
+        if (!ORDENES[o]) throw new Aviso('ese orden no existe');
+        await (await db(env)).prepare("INSERT INTO settings (key, value) VALUES ('order', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(o).run();
+        return Response.json({ ok: true });
+      }
       return texto('no está', 404);
     } catch (e) {
       // los de los formularios (falta el nombre, fecha mala…) se le enseñan a pepe tal cual
