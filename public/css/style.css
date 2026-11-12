@@ -71,64 +71,111 @@ h1, h2 {
   .preview.fija { padding: 1rem; }
 }
 
-/* superpepe (/admin/) y /login/: la misma letra y el mismo blanco y negro que la web.
-   Casillas como líneas de texto (solo la raya de abajo) y botones como texto entre [ ] */
-.admin { max-width: 60rem; }
-.admin header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 2rem; margin-bottom: 2rem; }
-.admin header h1 { margin: 0 0 .5rem; }
-.admin nav { display: flex; gap: 2ch; align-items: baseline; }
+/* lo que solo es para lectores de pantalla (el h1 de la portada sin intro) */
+.oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ============================================================
+   superpepe (/admin/) y /login/: la letra y el blanco y negro de
+   la web, con recuadros grises suaves y aire entre las cosas.
+   ============================================================ */
+.admin { --caja: #f4f4f2; --raya: #dcdcd8; max-width: 64rem; margin: 0 auto; }
+.admin h1 { margin: 0; }
+.admin h2 { font-size: 1rem; letter-spacing: .02em; margin: 0 0 1.5rem; color: var(--gris); }
+.admin header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1.5rem 2rem; margin-bottom: 3rem; }
+.admin nav { display: flex; gap: 1rem; align-items: center; }
+.admin nav a { padding: .5rem 0; }
 .admin nav a:hover { text-decoration: underline; }
+.admin form { margin: 0; }
+.admin p { margin: 0; }
+/* lo escondido se queda escondido aunque su clase diga display: grid o flex */
+.admin [hidden] { display: none !important; }
+
 input, button { font: inherit; color: inherit; letter-spacing: inherit; }
 input {
-  padding: .25rem 0; min-width: 0;
-  border: 0; border-bottom: 1px solid var(--fg); border-radius: 0;
-  background: transparent;
+  min-width: 0; width: 100%;
+  padding: .6rem .75rem;
+  border: 1px solid transparent; border-radius: 4px;
+  background: var(--bg);
 }
-input:focus { outline: none; border-bottom-width: 2px; margin-bottom: -1px; }
+input:focus { outline: none; border-color: var(--fg); }
 input::placeholder { color: var(--gris); }
-button { padding: 0; border: 0; background: none; cursor: pointer; white-space: nowrap; }
-button::before { content: "[ "; }
-button::after { content: " ]"; }
-button:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
-button:disabled { color: var(--gris); cursor: default; }
-button:focus-visible { outline: 1px dotted var(--fg); outline-offset: 2px; }
+input[type=search] { -webkit-appearance: none; appearance: none; }
+label { display: grid; gap: .35rem; }
 
-form.nueva, .login form { display: grid; gap: 1.2rem; max-width: 34rem; margin-bottom: 1rem; }
-label { display: grid; gap: .1rem; }
-.elegir { cursor: pointer; justify-items: start; gap: .6rem; }
-.elegir input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.elegir span { border: 1px dashed var(--fg); padding: 2rem 0; width: 100%; text-align: center; }
-.elegir:hover span, .elegir input:focus-visible + span { border-style: solid; }
-.previa { max-width: 100%; max-height: 14rem; }
-.elegir:has(.previa:not([hidden])) span { padding: .4rem 0; }
-.existe { margin: -.9rem 0 0; color: var(--gris); }
-.publicar { justify-self: start; font-size: 1.25rem; }
+button {
+  padding: .55rem 1rem;
+  border: 1px solid var(--fg); border-radius: 4px;
+  background: var(--bg); cursor: pointer; white-space: nowrap;
+}
+button:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
+button:disabled { border-color: var(--raya); color: var(--gris); cursor: default; }
+button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.principal { background: var(--fg); color: var(--bg); padding: .7rem 1.6rem; }
+.principal:hover:not(:disabled) { background: var(--bg); color: var(--fg); }
+.borrar, .borrar-proyecto { border-color: var(--raya); color: var(--gris); }
+.admin .borrar:hover, .admin .borrar-proyecto:hover { border-color: #c00; background: #c00; color: #fff; }
+.botones { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* los recuadros */
+.caja { background: var(--caja); border-radius: 8px; padding: 1.75rem; }
+.estado { color: var(--gris); }
 .estado:empty { display: none; }
 .error { color: #c00; }
 
-.herramientas {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem 3ch;
-  margin: 3rem 0 0; padding-top: 1rem; border-top: 1px solid var(--fg);
+/* el proyecto nuevo: la foto a la izquierda, los campos a la derecha */
+form.nueva { display: grid; grid-template-columns: minmax(12rem, 18rem) 1fr; gap: 2rem; align-items: start; }
+.campos { display: grid; gap: 1.25rem; }
+.admin .existe { margin-top: -.75rem; color: var(--gris); }
+
+/* elegir una foto: un recuadro de puntos, que se llena con la foto elegida */
+.elegir { position: relative; cursor: pointer; display: grid; place-items: center; gap: 0; }
+.elegir input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; padding: 0; }
+.elegir span {
+  display: grid; place-items: center; width: 100%; min-height: 7.5rem; padding: 1rem;
+  border: 1px dashed var(--gris); border-radius: 6px; background: var(--bg); color: var(--gris); text-align: center;
 }
-.herramientas p { margin: 0; }
-.orden button { color: var(--gris); }
-.orden button::before, .orden button::after { content: none; }
-.orden button[aria-pressed="true"] { color: var(--fg); text-decoration: underline; }
-.buscar { width: 16ch; }
+.elegir.grande span { min-height: 14rem; }
+.elegir:hover span, .elegir:focus-within span { border-color: var(--fg); color: var(--fg); }
+.previa { width: 100%; max-height: 16rem; object-fit: contain; border-radius: 6px; background: var(--bg); }
+.con-foto .elegir span { display: none; }
+
+/* orden, buscar y recuento */
+.herramientas { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; margin: 4rem 0 1.5rem; }
+.orden { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.orden span { color: var(--gris); margin-right: .6rem; }
+.orden button { padding: .4rem .8rem; border-color: var(--raya); }
+.orden button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.buscar { width: 14rem; background: var(--caja); }
 .herramientas .cuenta { color: var(--gris); margin-left: auto; }
 
-.proyectos { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: 2.2rem; }
-form.proyecto { display: grid; grid-template-columns: 1fr 16ch auto; gap: 2ch; align-items: baseline; }
-.fotos { list-style: none; padding: 0; margin: .8rem 0 0; display: flex; flex-wrap: wrap; gap: 1.2rem; }
-.fotos li { display: grid; gap: .3rem; width: 10rem; align-content: start; }
-.fotos img { display: block; width: 100%; height: 7rem; object-fit: contain; object-position: left bottom; }
-form.foto { display: flex; flex-wrap: wrap; gap: .2rem 1.5ch; }
-form.foto input { width: 100%; }
-.borrar { color: var(--gris); }
+/* un recuadro por proyecto */
+.proyectos { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.5rem; }
+form.proyecto { display: grid; grid-template-columns: 1fr 16rem auto; gap: 1rem; align-items: end; }
+.fotos { list-style: none; padding: 0; margin: 1.75rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 1.25rem; }
+.fotos > li { display: grid; gap: .6rem; align-content: start; }
+.fotos img { display: block; width: 100%; height: 8rem; object-fit: contain; object-position: center bottom; }
+.fotos a img { background: var(--raya); border-radius: 6px; object-fit: cover; }
+form.foto, .si-foto { display: grid; gap: .5rem; }
+.fotos button { padding: .35rem .65rem; }
+.si-foto { margin-top: .6rem; }
+.anadir .previa { height: 8rem; max-height: none; }
+.admin .pie { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.75rem; color: var(--gris); }
+
+/* /login/ */
+.login { max-width: 26rem; padding-top: 6rem; }
+.login h1 { margin-bottom: 2rem; }
+.login form { display: grid; gap: 1.25rem; }
+.login input { background: var(--caja); }
 
 @media (max-width: 760px) {
-  form.proyecto { grid-template-columns: 1fr auto; }
-  form.proyecto [name=tags] { grid-column: 1; grid-row: 2; }
-  .fotos li { width: calc(50% - .6rem); }
-  .herramientas .cuenta { margin-left: 0; width: 100%; }
+  .admin header { margin-bottom: 2rem; }
+  .caja { padding: 1.25rem; }
+  form.nueva { grid-template-columns: 1fr; gap: 1.25rem; }
+  .elegir.grande span { min-height: 9rem; }
+  form.proyecto { grid-template-columns: 1fr; }
+  form.proyecto button { justify-self: start; }
+  .fotos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .herramientas { margin-top: 3rem; }
+  .buscar { width: 100%; }
+  .herramientas .cuenta { margin-left: 0; }
 }

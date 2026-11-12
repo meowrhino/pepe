@@ -4,7 +4,6 @@
 // cargan solo si hacen falta. Safari no sabe hacer webp (ni en iPhone): ahí sale
 // jpg, que el Worker también acepta.
 const nueva = document.querySelector('form.nueva');
-const estado = nueva?.querySelector('.estado');
 
 // las librerías de imgToWeb, con SRI para no ejecutar nada alterado
 const LIBS = {
@@ -70,38 +69,52 @@ async function enviar(url, method, body) {
   return r;
 }
 
-nueva?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const boton = nueva.querySelector('button');
-  boton.disabled = true;
-  estado.textContent = 'subiendo…';
-  try {
-    const datos = new FormData(nueva);
-    const { b, w, h } = await comprimir(nueva.image.files[0]);
-    datos.set('image', b, 'foto');
-    datos.set('width', w);
-    datos.set('height', h);
-    await enviar('/api/images', 'POST', datos);
-    location.reload();
-  } catch (err) {
-    estado.textContent = `no se ha subido: ${err.message}`;
-    boton.disabled = false;
-  }
+// subir una foto: el formulario de arriba (proyecto nuevo, o uno que ya existe por el nombre)
+// y el «+ añadir foto» de cada recuadro (lleva el número del proyecto). Los dos, igual.
+document.querySelectorAll('form.subir').forEach((f) => {
+  const previa = f.querySelector('.previa');
+  const estado = f.querySelector('.estado');
+  const resto = f.querySelector('.si-foto');   // en los recuadros, la fecha y «subir» salen al elegir la foto
+
+  // la foto elegida, en pequeño, antes de subirla (un HEIC en Chrome no se ve aquí, pero se sube bien)
+  f.image.addEventListener('change', () => {
+    const file = f.image.files[0];
+    if (previa.src) URL.revokeObjectURL(previa.src);
+    previa.hidden = !file;
+    if (file) previa.src = URL.createObjectURL(file);
+    if (resto) resto.hidden = !file;
+    f.classList.toggle('con-foto', !!file);
+  });
+
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = f.image.files[0];
+    if (!file) { estado.textContent = 'falta la foto'; return; }
+    const boton = f.querySelector('button');
+    boton.disabled = true;
+    estado.textContent = 'subiendo…';
+    try {
+      const datos = new FormData(f);
+      const { b, w, h } = await comprimir(file);
+      datos.set('image', b, 'foto');
+      datos.set('width', w);
+      datos.set('height', h);
+      await enviar('/api/images', 'POST', datos);
+      location.reload();   // el navegador vuelve al mismo sitio de la página
+    } catch (err) {
+      estado.textContent = `no se ha subido: ${err.message}`;
+      boton.disabled = false;
+    }
+  });
 });
 
-// la foto elegida, en pequeño, antes de publicar
-const previa = nueva?.querySelector('.previa');
-nueva?.image.addEventListener('change', () => {
-  const file = nueva.image.files[0];
-  if (previa.src) URL.revokeObjectURL(previa.src);
-  previa.hidden = !file;
-  if (file) previa.src = URL.createObjectURL(file);   // HEIC en Chrome no se ve aquí, pero se sube bien
-});
-
-// avisa si el nombre es de un proyecto que ya existe (la foto se le añadirá)
+// avisa si el nombre es de un proyecto que ya existe (la foto se le añadirá; sin mirar mayúsculas)
 const existe = nueva?.querySelector('.existe');
-const titulos = () => new Set([...document.querySelectorAll('#titulos option')].map((o) => o.value));
-nueva?.title.addEventListener('input', () => { existe.hidden = !titulos().has(nueva.title.value.replace(/\s+/g, ' ').trim()); });
+const limpio = (s) => s.replace(/\s+/g, ' ').trim().toLowerCase();
+nueva?.title.addEventListener('input', () => {
+  const t = limpio(nueva.title.value);
+  existe.hidden = ![...document.querySelectorAll('#titulos option')].some((o) => limpio(o.value) === t);
+});
 
 // corregir un proyecto (nombre, tags) o la fecha de una foto: «guardar» se enciende al cambiar algo
 for (const [sel, ruta] of [['form.proyecto', 'projects'], ['form.foto', 'images']]) {
@@ -143,8 +156,18 @@ document.querySelector('.buscar')?.addEventListener('input', (e) => {
   for (const li of lista.children) li.hidden = !!q && !plano(`${li.dataset.title} ${li.querySelector('[name=tags]').value}`).includes(q);
 });
 
+document.querySelectorAll('.borrar-proyecto').forEach((b) => b.addEventListener('click', async () => {
+  const nombre = b.closest('li').dataset.title, n = Number(b.dataset.n);
+  if (!confirm(`¿Borrar «${nombre}» entero (${n === 1 ? 'su foto' : `sus ${n} fotos`})? Deja de salir en la web (se puede recuperar pidiéndolo).`)) return;
+  try {
+    await enviar(`/api/projects/${b.dataset.id}`, 'DELETE');
+    location.reload();
+  } catch (err) { alert(`no se ha borrado: ${err.message}`); }
+}));
+
 document.querySelectorAll('.borrar').forEach((b) => b.addEventListener('click', async () => {
-  if (!confirm('¿Borrar esta foto? Deja de salir en la web (se puede recuperar pidiéndolo).')) return;
+  const ultima = b.closest('.fotos').querySelectorAll('form.foto').length === 1;
+  if (!confirm(`¿Borrar esta foto?${ultima ? ' Es la única del proyecto: el proyecto también deja de salir.' : ''} Se puede recuperar pidiéndolo.`)) return;
   try {
     await enviar(`/api/images/${b.closest('form').dataset.id}`, 'DELETE');
     location.reload();

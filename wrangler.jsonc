@@ -13,7 +13,7 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/", "/admin/", "/api/*", "/media/*"]
+    "run_worker_first": ["/", "/admin", "/admin/", "/superpepe", "/superpepe/", "/api/*", "/media/*"]
   },
   "d1_databases": [{ "binding": "DB", "database_name": "pepe-archive" }],
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "pepe-archive" }],

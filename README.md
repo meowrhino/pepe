@@ -12,7 +12,8 @@ Es el patrón de **lasadcum** (JAMstack, `patrones.md` §10b) llevado a toda la 
   (`pepe-archive`, `<año>/<uuid>.webp`). Nada del archivo pasa por GitHub.
 - **superpepe** (`/admin/`) con contraseña (secreto `PASSWORD`): la foto se comprime en el navegador
   (imgToWeb: webp ≤ 2000 px, q85), pepe pone el proyecto, la fecha y los tags. Si el proyecto
-  ya existe, la foto se le añade. Ahí también elige el orden de la web (`settings.order` en
+  ya existe, la foto se le añade; cada proyecto tiene además su «+ añadir foto» (por su
+  número) y «borrar proyecto» (= borrar todas sus fotos, blando). Ahí también elige el orden de la web (`settings.order` en
   D1: más reciente, el de por defecto; más antiguo; a–z).
 - `data/site.json`: el título y la intro (`intro`, una lista de párrafos). Mientras esté
   vacía, el bloque «pepe» no sale. Sin `url`, `noindex`.

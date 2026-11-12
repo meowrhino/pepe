@@ -67,7 +67,7 @@ export function portada(site, proyectos) {
     : '';
   return `${cabeza(site, site.title)}
 <body>
-${intro}<main>
+${intro || `<h1 class="oculto">${esc(site.title)}</h1>\n`}<main>
 <h2>archive</h2>
 <ol class="archive">
 ${archivo(proyectos)}
@@ -82,11 +82,12 @@ ${archivo(proyectos)}
 export function admin(site, proyectos, hoy, orden) {
   const titulos = [...new Set(proyectos.map((p) => p.title))];
   const fotos = proyectos.reduce((n, p) => n + p.images.length, 0);
-  // data-title: para el buscador (public/js/admin.js)
-  const lista = proyectos.map((p) => `<li data-title="${esc(p.title)}">
+  const elegido = ORDENES[orden] ? orden : 'reciente';
+  // un recuadro por proyecto; data-title, para el buscador (public/js/admin.js)
+  const lista = proyectos.map((p) => `<li class="caja" data-title="${esc(p.title)}">
 <form class="proyecto" data-id="${p.id}">
-<input name="title" value="${esc(p.title)}" aria-label="nombre del proyecto" required maxlength="200">
-<input name="tags" value="${esc(p.tags)}" aria-label="tags" placeholder="sin tags">
+<label>nombre <input name="title" value="${esc(p.title)}" required maxlength="200"></label>
+<label>tags <input name="tags" value="${esc(p.tags)}" placeholder="sin tags"></label>
 <button disabled>guardar</button>
 </form>
 <ul class="fotos">
@@ -94,37 +95,49 @@ ${p.images.map((i) => `<li>
 <a href="${esc(i.src)}" target="_blank" title="abrir la foto"><img src="${esc(i.src)}" alt="" loading="lazy" width="${i.width}" height="${i.height}"></a>
 <form class="foto" data-id="${i.id}">
 <input type="date" name="date" value="${i.date}" aria-label="fecha" required>
-<button disabled>guardar</button>
-<button type="button" class="borrar">borrar</button>
+<div class="botones"><button disabled>guardar</button><button type="button" class="borrar">borrar</button></div>
 </form>
 </li>`).join('\n')}
+<li class="anadir">
+<form class="subir">
+<input type="hidden" name="project" value="${p.id}">
+<label class="elegir"><input type="file" name="image" accept="image/*,.heic,.heif,.tif,.tiff"><span>+ añadir foto</span><img class="previa" alt="" hidden></label>
+<div class="si-foto" hidden>
+<input type="date" name="date" value="${hoy}" aria-label="fecha" required>
+<div class="botones"><button>subir</button></div>
+<p class="estado" role="status"></p>
+</div>
+</form>
+</li>
 </ul>
+<p class="pie">${p.images.length === 1 ? '1 foto' : `${p.images.length} fotos`} <button type="button" class="borrar-proyecto" data-id="${p.id}" data-n="${p.images.length}">borrar proyecto</button></p>
 </li>`).join('\n');
   return `${cabeza(site, 'superpepe', { index: false })}
 <body class="admin">
 <header>
 <h1>superpepe</h1>
-<nav><a href="/" target="_blank">ver la web ↗</a> <form method="post" action="/api/logout"><button>salir</button></form></nav>
+<nav><a href="/" target="_blank">ver la web ↗</a><form method="post" action="/api/logout"><button>salir</button></form></nav>
 </header>
-<form class="nueva" action="/api/images">
-<label class="elegir">
-<input type="file" name="image" accept="image/*,.heic,.heif,.tif,.tiff" required>
-<span>+ foto</span>
-<img class="previa" alt="" hidden>
-</label>
-<label>proyecto <input name="title" list="titulos" required maxlength="200" autocomplete="off" placeholder="nombre del proyecto"></label>
+<section class="caja nueva-caja">
+<h2>proyecto nuevo</h2>
+<form class="subir nueva">
+<label class="elegir grande"><input type="file" name="image" accept="image/*,.heic,.heif,.tif,.tiff"><span>+ foto</span><img class="previa" alt="" hidden></label>
+<div class="campos">
+<label>nombre <input name="title" list="titulos" required maxlength="200" autocomplete="off"></label>
 <datalist id="titulos">${titulos.map((t) => `<option value="${esc(t)}">`).join('')}</datalist>
-<p class="existe" hidden>ya existe: la foto se le añade</p>
+<p class="existe" hidden>ese proyecto ya existe: la foto se le añade</p>
 <label>fecha <input type="date" name="date" value="${hoy}" required></label>
 <label>tags <input name="tags" placeholder="#paperwork" autocomplete="off"></label>
-<button class="publicar">publicar</button>
+<div class="botones"><button class="principal">publicar</button></div>
 <p class="estado" role="status"></p>
+</div>
 </form>
+</section>
 <div class="herramientas">
-<p class="orden">orden de la web:
-${Object.entries(ORDENES).map(([k, o]) => `<button type="button" data-orden="${k}" aria-pressed="${k === (ORDENES[orden] ? orden : 'reciente')}">${o.nombre}</button>`).join(' / ')}
-</p>
-<input type="search" class="buscar" placeholder="buscar" aria-label="buscar un proyecto">
+<div class="orden" role="group" aria-label="orden de la web"><span>orden de la web</span>
+${Object.entries(ORDENES).map(([k, o]) => `<button type="button" data-orden="${k}" aria-pressed="${k === elegido}">${o.nombre}</button>`).join('')}
+</div>
+<input type="search" class="buscar" placeholder="buscar…" aria-label="buscar un proyecto">
 <p class="cuenta">${proyectos.length} proyectos · ${fotos} fotos</p>
 </div>
 <ol class="proyectos">

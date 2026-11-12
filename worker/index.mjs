@@ -94,7 +94,9 @@ function titulo(f) {
 }
 function dia(f) {
   const d = String(f.get('date') || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d))) throw new Aviso('la fecha no es válida');
+  // Date.parse('2025-02-30') no falla (da el 2 de marzo): hay que ver que vuelve igual
+  const t = new Date(`${d}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(t.getTime()) || t.toISOString().slice(0, 10) !== d) throw new Aviso('la fecha no es válida');
   return d;
 }
 
@@ -117,10 +119,16 @@ async function login(req, env) {
     .transform(new Response(res.body, { status: 401, headers: res.headers }));
 }
 
-// una foto nueva: al proyecto con ese nombre si ya existe, si no, a uno nuevo
+// los proyectos que salen en la web: los que tienen alguna foto sin borrar
+const VIVO = 'EXISTS (SELECT 1 FROM images i WHERE i.project_id = p.id AND i.deleted_at IS NULL)';
+
+// una foto nueva: a un proyecto por su número («+ añadir foto» en su recuadro), o por el
+// nombre (el formulario de arriba): al que se llame así (sin mirar mayúsculas), o a uno nuevo
 async function subir(req, env) {
   const f = await req.formData();
-  const title = titulo(f), date = dia(f), tags = limpiarTags(f.get('tags'));
+  const pid = Number(f.get('project')) || null;
+  const date = dia(f), tags = limpiarTags(f.get('tags'));
+  const title = pid ? null : titulo(f);
   const img = f.get('image');
   if (!img || typeof img !== 'object' || !img.size) throw new Aviso('falta la foto');
   const ext = TIPOS[img.type];
@@ -130,7 +138,10 @@ async function subir(req, env) {
   if (![w, h].every((n) => Number.isInteger(n) && n > 0 && n <= 10000)) throw new Aviso('faltan las medidas de la foto');
 
   const d1 = await db(env);
-  let p = await d1.prepare('SELECT id, tags FROM projects WHERE title = ? ORDER BY id LIMIT 1').bind(title).first();
+  let p = pid
+    ? await d1.prepare('SELECT id, tags FROM projects WHERE id = ?').bind(pid).first()
+    : await d1.prepare(`SELECT id, tags FROM projects p WHERE title = ? COLLATE NOCASE ORDER BY ${VIVO} DESC, id LIMIT 1`).bind(title).first();
+  if (pid && !p) throw new Aviso('ese proyecto ya no está');
   if (p) {
     const juntas = limpiarTags(`${p.tags} ${tags}`);
     if (juntas !== p.tags) await d1.prepare('UPDATE projects SET tags = ? WHERE id = ?').bind(juntas, p.id).run();
@@ -146,8 +157,12 @@ async function subir(req, env) {
 
 async function editarProyecto(id, req, env) {
   const f = await req.formData();
-  const r = await (await db(env)).prepare('UPDATE projects SET title = ?, tags = ? WHERE id = ?')
-    .bind(titulo(f), limpiarTags(f.get('tags')), id).run();
+  const title = titulo(f), d1 = await db(env);
+  // dos proyectos con el mismo nombre no se distinguirían al subir por el nombre
+  const otro = await d1.prepare(`SELECT 1 FROM projects p WHERE title = ? COLLATE NOCASE AND id <> ? AND ${VIVO}`).bind(title, id).first();
+  if (otro) throw new Aviso('ya hay otro proyecto con ese nombre');
+  const r = await d1.prepare('UPDATE projects SET title = ?, tags = ? WHERE id = ?')
+    .bind(title, limpiarTags(f.get('tags')), id).run();
   return r.meta.changes ? Response.json({ ok: true }) : texto('no está', 404);
 }
 
@@ -155,6 +170,13 @@ async function editarFoto(id, req, env) {
   const r = await (await db(env)).prepare('UPDATE images SET date = ? WHERE id = ? AND deleted_at IS NULL')
     .bind(dia(await req.formData()), id).run();
   return r.meta.changes ? Response.json({ ok: true }) : texto('no está', 404);
+}
+
+// borrar un proyecto es borrar todas sus fotos: deja de salir, pero queda en D1 (y en /api/export).
+// Si luego se sube una foto con ese mismo nombre, vuelve, con esa foto sola
+async function borrarProyecto(id, env) {
+  const r = await (await db(env)).prepare(`UPDATE images SET deleted_at = ${AHORA} WHERE project_id = ? AND deleted_at IS NULL`).bind(id).run();
+  return r.meta.changes ? Response.json({ ok: true, fotos: r.meta.changes }) : texto('no está', 404);
 }
 
 // borrar es borrado blando: la foto deja de salir, pero sigue en D1 y R2 (y en /api/export)
@@ -186,6 +208,7 @@ export default {
       if (p === '/api/archive' && m === 'GET') return Response.json(await archivo(env));
       if (p === '/api/login' && m === 'POST') return login(req, env);
       if (p === '/api/logout' && m === 'POST') return ir('/', { 'set-cookie': cookie('', 0) });
+      if (p === '/admin' || p === '/superpepe' || p === '/superpepe/') return ir('/admin/');   // como lo escriba pepe
 
       // a partir de aquí, con la contraseña
       const ok = await dentro(req, env);
@@ -201,6 +224,7 @@ export default {
       if (p === '/api/images' && m === 'POST') return await subir(req, env);
       const [, tipo, id] = /^\/api\/(projects|images)\/(\d+)$/.exec(p) || [];
       if (tipo === 'projects' && m === 'PATCH') return await editarProyecto(Number(id), req, env);
+      if (tipo === 'projects' && m === 'DELETE') return await borrarProyecto(Number(id), env);
       if (tipo === 'images' && m === 'PATCH') return await editarFoto(Number(id), req, env);
       if (tipo === 'images' && m === 'DELETE') return await borrarFoto(Number(id), env);
       if (p === '/api/settings' && m === 'PATCH') {
