@@ -1,0 +1,23 @@
+// pepe, en Cloudflare. Todo lo sirve un Worker (worker/index.mjs): la portada
+// con el archivo, /admin/, /api/* y /media/*. Lo estático (css, js, /login/, 404)
+// sale de public/ tal cual.
+// D1 se crea solo con el primer deploy; el bucket de R2, "pepe-archive", hay que
+// crearlo antes a mano (npx wrangler r2 bucket create pepe-archive).
+// El secreto PASSWORD (la contraseña de /admin/): npx wrangler secret put PASSWORD,
+// o en Workers → pepe → Settings → Variables and Secrets, tipo Secret.
+{
+  "name": "pepe",
+  "main": "worker/index.mjs",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/", "/admin/", "/api/*", "/media/*"]
+  },
+  "d1_databases": [{ "binding": "DB", "database_name": "pepe-archive" }],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "pepe-archive" }],
+  // diez intentos de contraseña por minuto y por IP
+  "ratelimits": [{ "name": "LOGIN_LIMIT", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
+  "observability": { "enabled": true }
+}

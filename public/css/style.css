@@ -1,0 +1,98 @@
+/* pepe: una lista en monoespaciada, como la maqueta (MacBook Air - 3) */
+:root {
+  --fg: #000;
+  --bg: #fff;
+  --gris: #888;
+  --mono: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  padding: 4rem 4rem 6rem;
+  font: 16px/1.55 var(--mono);
+  letter-spacing: .02em;
+  color: var(--fg);
+  background: var(--bg);
+}
+a { color: inherit; text-decoration: none; }
+h1, h2 {
+  margin: 0 0 1.5rem;
+  font-weight: 400;
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: .06em;
+}
+.intro { max-width: 52ch; margin-bottom: 3rem; }
+.intro p { margin: 0 0 1rem; }
+
+/* el archivo: nombre | tags | fechas, en tres columnas */
+/* una sola rejilla para toda la lista: la columna del nombre mide lo que el más largo */
+.archive {
+  list-style: none; margin: 0; padding: 0;
+  display: grid;
+  grid-template-columns: max-content minmax(12ch, max-content) 1fr;
+  column-gap: 4ch;
+}
+.archive li { display: contents; }
+.archive .title { grid-column: 1; }
+.archive .tags { grid-column: 2; }
+.archive .dates { grid-column: 3; }
+.archive .year .dates { margin-top: 1.55em; }
+.archive .year:first-child .dates { margin-top: 0; }
+.archive .dates a:hover, .archive .dates a:focus-visible, .archive .dates a.activa { text-decoration: underline; }
+
+/* la foto: al pasar por una fecha, a un lado; al hacer clic (o tocar en el móvil), en grande */
+/* al pasar: junto al cursor (la coloca js/main.js) */
+.preview {
+  position: fixed;
+  top: 0; left: 0;
+  width: min(32vw, 420px);
+  margin: 0;
+  display: flex;
+  pointer-events: none;
+}
+.preview[hidden] { display: none; }
+.preview img { width: auto; height: auto; max-width: 100%; max-height: 70vh; object-fit: contain; }
+.preview.fija img { max-height: 100%; }
+.preview.fija {
+  inset: 0; width: auto; height: auto; padding: 2rem;
+  align-items: center; justify-content: center;
+  background: var(--bg);
+  pointer-events: auto; cursor: zoom-out;
+}
+
+@media (max-width: 760px) {
+  body { padding: 2rem 1rem 4rem; font-size: 14px; }
+  /* en el móvil, las fechas debajo del nombre */
+  .archive { grid-template-columns: 1fr auto; column-gap: 2ch; }
+  .archive .title { grid-column: 1; }
+  .archive .tags { grid-column: 2; color: var(--gris); }
+  .archive .dates { grid-column: 1 / -1; margin-bottom: .6em; }
+  .preview.fija { padding: 1rem; }
+}
+
+/* /admin/ y /login/ */
+.admin header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.admin h1 { font-size: 2rem; }
+form.nueva, .login form { display: grid; gap: .8rem; max-width: 34rem; margin-bottom: 1rem; }
+label { display: grid; gap: .2rem; }
+input, button { font: inherit; color: inherit; }
+input { padding: .4rem .5rem; border: 1px solid var(--fg); background: var(--bg); border-radius: 0; min-width: 0; }
+button { padding: .4rem .8rem; border: 1px solid var(--fg); background: var(--bg); cursor: pointer; border-radius: 0; }
+button:hover { background: var(--fg); color: var(--bg); }
+button:disabled { opacity: .4; cursor: wait; }
+.estado:empty, .nota { color: var(--gris); }
+.proyectos { list-style: none; padding: 0; margin: 3rem 0 0; display: grid; gap: 2rem; }
+form.proyecto { display: grid; grid-template-columns: 1fr 14rem auto; gap: .5rem; }
+.fotos { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: 1rem; }
+.fotos li { display: grid; gap: .3rem; width: 11rem; }
+.fotos img { width: 100%; height: 8rem; object-fit: contain; object-position: left bottom; background: #f4f4f4; }
+form.foto { display: flex; flex-wrap: wrap; gap: .3rem; }
+form.foto input { width: 100%; }
+.guardado { outline: 2px solid var(--fg); }
+.error { color: #c00; }
+@media (max-width: 760px) {
+  form.proyecto { grid-template-columns: 1fr; }
+  .fotos li { width: calc(50% - .5rem); }
+}
