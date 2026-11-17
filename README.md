@@ -44,4 +44,18 @@ npm test
 Ahora está en la cuenta de manu: https://pepe.manuellatourf.workers.dev. **Traspaso** a la de
 pepe: pasar D1 (`wrangler d1 export` → `d1 execute --file`) y las fotos de R2, volver a poner
 `PASSWORD` y conectar pepe.work en *Workers → pepe → Domains & Routes*. Al tener dominio,
-`url` en `data/site.json` (quita el `noindex`).
+`url` en `data/site.json` (quita el `noindex`). Y la copia del domingo:
+
+- **En la nuestra** (`meowrhino/pepe`), quitar el `schedule` de `.github/workflows/copia.yml`:
+  se queda solo a mano (*Run workflow*), para no ir copiando su web cada semana sin motivo.
+- **En la de pepe**, *Actions* → «copia del archivo» → *Run workflow* una vez, para ver que
+  corre (y que copia de pepe.work, por la `url` de `site.json`).
+
+## La copia del archivo
+
+Para que nada se quede solo en Cloudflare: cada domingo (05:00 UTC, como profilepics)
+`.github/workflows/copia.yml` corre `tools/copia.mjs`, que baja de la web `data/archive.json`
+(`title`, `tags`, `photos` con `date` y `src`) y las fotos a `assets/img/archive/<año>/<uuid>.webp`,
+y hace commit si algo ha cambiado. Sin secretos: lee `/api/archive` y `/media/`, lo mismo que
+enseña la web, así que las fotos borradas salen de la copia (y quedan en el historial de git).
+No se publica: `wrangler.jsonc` solo sube `public/`. A mano: `node tools/copia.mjs [web]`.

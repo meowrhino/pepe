@@ -81,6 +81,15 @@ fecha a sus fotos.
 
 ## 5. Una copia de todo
 
-`/api/export` (con la sesión abierta) baja un archivo con todos los nombres, tags, fechas y
-la ruta de cada foto, también de las borradas. Las fotos en sí están en Cloudflare →
-R2 → `pepe-archive`.
+**Cada domingo, todo lo que sale en la web se copia a tu GitHub**, solo: los nombres, tags
+y fechas en `data/archive.json`, y las fotos en `assets/img/archive/`. No tienes que hacer
+nada. Si quieres la copia al momento: en GitHub, *Actions* → «copia del archivo» →
+*Run workflow*.
+
+**La copia no se edita**: va de la web a GitHub, no al revés. Si cambias `archive.json` o
+pones una foto en `assets/img/archive/`, no sale en la web, y el domingo siguiente se
+rehace y se pierde. Para subir o corregir algo, siempre superpepe.
+
+Lo borrado sale de la copia, pero no se pierde: `/api/export` (con la sesión abierta) baja
+un archivo con todo, también lo borrado, y las fotos siguen en Cloudflare → R2 →
+`pepe-archive`.
