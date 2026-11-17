@@ -90,6 +90,11 @@ nada. Si quieres la copia al momento: en GitHub, *Actions* → «copia del archi
 pones una foto en `assets/img/archive/`, no sale en la web, y el domingo siguiente se
 rehace y se pierde. Para subir o corregir algo, siempre superpepe.
 
+**Si en GitHub sale un aviso** (*Issues*) «La copia del archivo ha fallado», la web está
+bien: lo que falta es la copia de esa semana. Vuelve a lanzarla (*Actions* → «copia del
+archivo» → *Run workflow*) y, si vuelve a fallar, escríbenos. Cuando vuelve a ir, el aviso
+se cierra solo.
+
 Lo borrado sale de la copia, pero no se pierde: `/api/export` (con la sesión abierta) baja
 un archivo con todo, también lo borrado, y las fotos siguen en Cloudflare → R2 →
 `pepe-archive`.
