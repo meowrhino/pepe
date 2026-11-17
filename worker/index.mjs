@@ -212,7 +212,9 @@ export default {
 
       // a partir de aquí, con la contraseña
       const ok = await dentro(req, env);
-      if (p === '/admin/') return ok ? html(admin(site, await archivo(env), new Date().toISOString().slice(0, 10), await orden(env))) : ir('/login/');
+      // «hoy» en la hora de pepe: en UTC, de 0 a 1 (2 en verano) salía la fecha de ayer
+      const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+      if (p === '/admin/') return ok ? html(admin(site, await archivo(env), hoy, await orden(env))) : ir('/login/');
       if (!p.startsWith('/api/')) return env.ASSETS.fetch(req);
       if (!ok) return texto('hay que entrar con la contraseña (vuelve a /admin/)', 401);
       if (p === '/api/export' && m === 'GET') {
@@ -229,7 +231,8 @@ export default {
       if (tipo === 'images' && m === 'DELETE') return await borrarFoto(Number(id), env);
       if (p === '/api/settings' && m === 'PATCH') {
         const o = String((await req.formData()).get('order') || '');
-        if (!ORDENES[o]) throw new Aviso('ese orden no existe');
+        // con hasOwn: ORDENES['toString'] también existe
+        if (!Object.hasOwn(ORDENES, o)) throw new Aviso('ese orden no existe');
         await (await db(env)).prepare("INSERT INTO settings (key, value) VALUES ('order', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(o).run();
         return Response.json({ ok: true });
       }

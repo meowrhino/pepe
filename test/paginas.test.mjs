@@ -39,6 +39,9 @@ test('superpepe marca el orden elegido', () => {
   assert.match(h, /data-orden="alfa" aria-pressed="true"/);
   assert.match(h, /data-orden="reciente" aria-pressed="false"/);
   assert.match(h, /<h1>superpepe<\/h1>/);
+  // una línea por proyecto como la web, que se abre; y el ancho de las columnas
+  assert.match(h, /<details id="p1">\n<summary><span class="title">calçotada &lt;b&gt;<\/span><span class="tags">#paperwork<\/span><span class="dates">2024\.12\.31 \/ 2025\.01\.02<\/span><\/summary>/);
+  assert.match(h, /style="--t:13;--g:10;--d:23"/);
 });
 
 test('tags: sin #, minúsculas, sin repetir', () => {

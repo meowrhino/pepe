@@ -10,7 +10,7 @@
 
 Entra en `pepe.work/admin` con la contraseña (la sesión dura 60 días en ese navegador).
 
-**A un proyecto nuevo** (el recuadro de arriba, «proyecto nuevo»):
+**A un proyecto nuevo** (el botón de arriba, **+ proyecto nuevo**, que se abre):
 
 1. **+ foto**: elige una de la galería o hazla en el momento (en el móvil te deja elegir).
    Sale en pequeño para que veas que es la buena. Puede ser jpg, png, HEIC del iPhone o
@@ -19,28 +19,31 @@ Entra en `pepe.work/admin` con la contraseña (la sesión dura 60 días en ese n
 3. **fecha**: la que tú decidas que es la de esa foto (no la de hoy por fuerza).
 4. **tags** (opcional): separados por espacios, con o sin `#`: `#paperwork #proyecto`.
    Salen en minúsculas y sin repetir.
-5. **publicar**. La página se recarga y la foto ya está en la web.
+5. **publicar**. La página se recarga con ese proyecto abierto y la foto ya está en la web.
 
 Si escribes el nombre de un proyecto que **ya existe**, debajo pone «ese proyecto ya existe»
 y la foto se le añade a ese (sin mirar mayúsculas).
 
-**A un proyecto que ya está**: en su recuadro, **+ añadir foto** → elige la foto → pon la
+**A un proyecto que ya está**: tócalo en la lista para abrirlo, **+ añadir foto** → elige la foto → pon la
 fecha → **subir**. Sale al lado de las otras, y en la web, `2025.01.08 / 2025.04.02`.
 
 ## 2. Corregir y borrar
 
-Debajo, un recuadro por proyecto, en el orden de la web. Con **buscar** dejas solo los que
-tienen esa palabra en el nombre o en los tags.
+Debajo, la lista de proyectos igual que en la web (nombre · tags · fechas) y en su orden.
+Toca uno para abrirlo: sale en un recuadro con sus fotos y todo lo de cambiar; tócalo otra
+vez para cerrarlo. Con **buscar** dejas solo los que tienen esa palabra en el nombre o en
+los tags.
 
 | qué | dónde | luego |
 |---|---|---|
-| el nombre de un proyecto | arriba del recuadro, **nombre** | **guardar** (al lado) |
+| el nombre de un proyecto | arriba, **nombre** | **guardar** (al lado) |
 | sus tags | **tags** (sin `#`, separados por espacios) | **guardar** |
 | la fecha de una foto | la fecha debajo de la foto | **guardar** (debajo) |
 | quitar una foto | **borrar**, debajo de la foto | pide confirmación |
-| quitar un proyecto entero | **borrar proyecto**, abajo del recuadro | pide confirmación |
+| quitar un proyecto entero | **borrar proyecto**, abajo | pide confirmación |
 
-**guardar** se enciende cuando cambias algo; al guardarlo pone **guardado ✓**. Dos
+**guardar** se enciende cuando cambias algo; al guardarlo, la página se recarga con el
+proyecto abierto y el cambio ya está en la lista y en la web. Dos
 proyectos no pueden llamarse igual: si lo intentas, te lo dice.
 
 **Cómo funciona borrar**:
@@ -63,6 +66,9 @@ lista de superpepe a la vez:
 | **a–z** | por el nombre |
 
 Dentro de un proyecto, sus fechas van siempre de la más antigua a la más nueva.
+
+No hay orden a mano: si quieres que un proyecto salga más arriba o más abajo, cámbiale la
+fecha a sus fotos.
 
 ## 4. Si algo sale mal
 

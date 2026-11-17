@@ -83,8 +83,17 @@ export function admin(site, proyectos, hoy, orden) {
   const titulos = [...new Set(proyectos.map((p) => p.title))];
   const fotos = proyectos.reduce((n, p) => n + p.images.length, 0);
   const elegido = ORDENES[orden] ? orden : 'reciente';
-  // un recuadro por proyecto; data-title, para el buscador (public/js/admin.js)
-  const lista = proyectos.map((p) => `<li class="caja" data-title="${esc(p.title)}">
+  // la columna del nombre y la de los tags miden lo que el más largo, como en la web (letra monoespaciada)
+  const ancho = (xs) => Math.min(60, Math.max(4, ...xs.map((x) => [...x].length)));
+  // y la de las fechas, hasta tres (2025.01.08 / … son 13 por fecha); con más, se parten
+  const fechas = Math.min(3, Math.max(1, ...proyectos.map((p) => p.images.length))) * 13 - 3;
+  const cols = `--t:${ancho(proyectos.map((p) => p.title))};--g:${ancho(proyectos.map((p) => tagsHtml(p.tags).replace(/&#?\w+;/g, '_')))};--d:${fechas}`;
+  // una línea por proyecto, como en la web; al tocarla se abre con todo lo de editar.
+  // data-title, para el buscador; id p<n>, para volver a abrirla tras guardar (public/js/admin.js)
+  const lista = proyectos.map((p) => `<li data-title="${esc(p.title)}">
+<details id="p${p.id}">
+<summary><span class="title">${esc(p.title)}</span><span class="tags">${tagsHtml(p.tags)}</span><span class="dates">${p.images.map((i) => fecha(i.date)).join(' / ')}</span></summary>
+<div class="caja">
 <form class="proyecto" data-id="${p.id}">
 <label>nombre <input name="title" value="${esc(p.title)}" required maxlength="200"></label>
 <label>tags <input name="tags" value="${esc(p.tags)}" placeholder="sin tags"></label>
@@ -111,6 +120,8 @@ ${p.images.map((i) => `<li>
 </li>
 </ul>
 <p class="pie">${p.images.length === 1 ? '1 foto' : `${p.images.length} fotos`} <button type="button" class="borrar-proyecto" data-id="${p.id}" data-n="${p.images.length}">borrar proyecto</button></p>
+</div>
+</details>
 </li>`).join('\n');
   return `${cabeza(site, 'superpepe', { index: false })}
 <body class="admin">
@@ -118,9 +129,9 @@ ${p.images.map((i) => `<li>
 <h1>superpepe</h1>
 <nav><a href="/" target="_blank">ver la web ↗</a><form method="post" action="/api/logout"><button>salir</button></form></nav>
 </header>
-<section class="caja nueva-caja">
-<h2>proyecto nuevo</h2>
-<form class="subir nueva">
+<details class="nueva-caja">
+<summary>+ proyecto nuevo</summary>
+<form class="subir nueva caja">
 <label class="elegir grande"><input type="file" name="image" accept="image/*,.heic,.heif,.tif,.tiff"><span>+ foto</span><img class="previa" alt="" hidden></label>
 <div class="campos">
 <label>nombre <input name="title" list="titulos" required maxlength="200" autocomplete="off"></label>
@@ -132,7 +143,7 @@ ${p.images.map((i) => `<li>
 <p class="estado" role="status"></p>
 </div>
 </form>
-</section>
+</details>
 <div class="herramientas">
 <div class="orden" role="group" aria-label="orden de la web"><span>orden de la web</span>
 ${Object.entries(ORDENES).map(([k, o]) => `<button type="button" data-orden="${k}" aria-pressed="${k === elegido}">${o.nombre}</button>`).join('')}
@@ -140,7 +151,7 @@ ${Object.entries(ORDENES).map(([k, o]) => `<button type="button" data-orden="${k
 <input type="search" class="buscar" placeholder="buscar…" aria-label="buscar un proyecto">
 <p class="cuenta">${proyectos.length} proyectos · ${fotos} fotos</p>
 </div>
-<ol class="proyectos">
+<ol class="proyectos" style="${cols}">
 ${lista}
 </ol>
 <script src="/js/admin.js" defer></script>

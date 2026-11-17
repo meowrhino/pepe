@@ -78,9 +78,9 @@ h1, h2 {
    superpepe (/admin/) y /login/: la letra y el blanco y negro de
    la web, con recuadros grises suaves y aire entre las cosas.
    ============================================================ */
-.admin { --caja: #f4f4f2; --raya: #dcdcd8; max-width: 64rem; margin: 0 auto; }
-.admin h1 { margin: 0; }
-.admin h2 { font-size: 1rem; letter-spacing: .02em; margin: 0 0 1.5rem; color: var(--gris); }
+.admin { --caja: #f4f4f2; --raya: #dcdcd8; max-width: 78rem; margin: 0 auto; }
+/* superpepe es una herramienta: el título, más pequeño que el «archive» de la web */
+.admin h1 { margin: 0; font-size: clamp(2.25rem, 5vw, 3.25rem); }
 .admin header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1.5rem 2rem; margin-bottom: 3rem; }
 .admin nav { display: flex; gap: 1rem; align-items: center; }
 .admin nav a { padding: .5rem 0; }
@@ -117,13 +117,17 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 .botones { display: flex; flex-wrap: wrap; gap: .5rem; }
 
 /* los recuadros */
-.caja { background: var(--caja); border-radius: 8px; padding: 1.75rem; }
+.caja { background: var(--caja); border-radius: 8px; padding: 1.25rem 1.5rem; }
 .estado { color: var(--gris); }
 .estado:empty { display: none; }
 .error { color: #c00; }
 
-/* el proyecto nuevo: la foto a la izquierda, los campos a la derecha */
-form.nueva { display: grid; grid-template-columns: minmax(12rem, 18rem) 1fr; gap: 2rem; align-items: start; }
+/* el proyecto nuevo: un botón que se abre; la foto a la izquierda, los campos a la derecha */
+.nueva-caja > summary { display: inline-block; list-style: none; cursor: pointer; padding: .7rem 1.6rem; border: 1px solid var(--fg); border-radius: 4px; background: var(--fg); color: var(--bg); }
+.nueva-caja > summary::-webkit-details-marker { display: none; }
+.nueva-caja > summary:hover, .nueva-caja[open] > summary { background: var(--bg); color: var(--fg); }
+.nueva-caja > summary:focus-visible, .proyectos summary:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+form.nueva { margin-top: 1rem; display: grid; grid-template-columns: minmax(12rem, 18rem) 1fr; gap: 2rem; align-items: start; }
 .campos { display: grid; gap: 1.25rem; }
 .admin .existe { margin-top: -.75rem; color: var(--gris); }
 
@@ -140,26 +144,37 @@ form.nueva { display: grid; grid-template-columns: minmax(12rem, 18rem) 1fr; gap
 .con-foto .elegir span { display: none; }
 
 /* orden, buscar y recuento */
-.herramientas { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; margin: 4rem 0 1.5rem; }
+.herramientas { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; margin: 3rem 0 1.25rem; }
 .orden { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
 .orden span { color: var(--gris); margin-right: .6rem; }
 .orden button { padding: .4rem .8rem; border-color: var(--raya); }
 .orden button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-.buscar { width: 14rem; background: var(--caja); }
+.buscar { width: 12rem; background: var(--caja); }
 .herramientas .cuenta { color: var(--gris); margin-left: auto; }
 
-/* un recuadro por proyecto */
-.proyectos { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.5rem; }
+/* la lista: una línea por proyecto, como la web (nombre | tags | fechas); al tocarla se abre en un
+   recuadro. --t y --g, lo que mide el nombre y los tags más largos (worker/paginas.mjs) */
+.proyectos { list-style: none; padding: 0; margin: 0 -.75rem; }
+.proyectos summary {
+  display: grid; grid-template-columns: minmax(0, calc(var(--t) * 1.04ch)) calc(var(--g) * 1.04ch) calc(var(--d) * 1.04ch); column-gap: 4ch;   /* si no cabe, se parte el nombre, no las fechas */
+  padding: .3rem .75rem; border-radius: 8px; list-style: none; cursor: pointer;
+}
+.proyectos summary::-webkit-details-marker { display: none; }
+.proyectos summary:hover .title, .proyectos [open] > summary .title { text-decoration: underline; }
+.proyectos [open] { background: var(--caja); border-radius: 8px; margin: .75rem 0; }
+.proyectos [open] > summary { padding-top: .9rem; }
+.proyectos .caja { background: none; padding: 1rem .75rem 1.25rem; }
 form.proyecto { display: grid; grid-template-columns: 1fr 16rem auto; gap: 1rem; align-items: end; }
-.fotos { list-style: none; padding: 0; margin: 1.75rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 1.25rem; }
+.fotos { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 1rem; }   /* 11rem: lo que ocupan «guardar» y «borrar» */
 .fotos > li { display: grid; gap: .6rem; align-content: start; }
 .fotos img { display: block; width: 100%; height: 8rem; object-fit: contain; object-position: center bottom; }
 .fotos a img { background: var(--raya); border-radius: 6px; object-fit: cover; }
 form.foto, .si-foto { display: grid; gap: .5rem; }
-.fotos button { padding: .35rem .65rem; }
+.fotos button { padding: .35rem .5rem; }
+.fotos .botones { flex-wrap: nowrap; gap: .4rem; }   /* guardar y borrar en una línea */
 .si-foto { margin-top: .6rem; }
 .anadir .previa { height: 8rem; max-height: none; }
-.admin .pie { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.75rem; color: var(--gris); }
+.admin .pie { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.25rem; color: var(--gris); }
 
 /* /login/ */
 .login { max-width: 26rem; padding-top: 6rem; }
@@ -173,6 +188,11 @@ form.foto, .si-foto { display: grid; gap: .5rem; }
   form.nueva { grid-template-columns: 1fr; gap: 1.25rem; }
   .elegir.grande span { min-height: 9rem; }
   form.proyecto { grid-template-columns: 1fr; }
+  /* como la web en el móvil: el nombre en una línea; debajo, a la derecha, los tags y las fechas */
+  .proyectos summary { grid-template-columns: 1fr auto auto; column-gap: 2ch; padding-block: .45rem; }
+  .proyectos summary .title { grid-column: 1 / -1; }
+  .proyectos summary .tags { grid-column: 2; color: var(--gris); }
+  .proyectos summary .dates { grid-column: 3; text-align: right; }
   form.proyecto button { justify-self: start; }
   .fotos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
   .herramientas { margin-top: 3rem; }

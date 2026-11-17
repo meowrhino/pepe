@@ -63,6 +63,10 @@ async function comprimir(file) {
   return { b, w: c.width, h: c.height };
 }
 
+// tras guardar, subir o borrar se recarga con ese proyecto abierto (#p<n>, en worker/paginas.mjs)
+document.getElementById(location.hash.slice(1))?.setAttribute('open', '');
+const recargar = (pid) => { if (pid) location.hash = `p${pid}`; location.reload(); };
+
 async function enviar(url, method, body) {
   const r = await fetch(url, { method, body });
   if (!r.ok) throw new Error(await r.text());
@@ -99,8 +103,8 @@ document.querySelectorAll('form.subir').forEach((f) => {
       datos.set('image', b, 'foto');
       datos.set('width', w);
       datos.set('height', h);
-      await enviar('/api/images', 'POST', datos);
-      location.reload();   // el navegador vuelve al mismo sitio de la página
+      const { project } = await (await enviar('/api/images', 'POST', datos)).json();
+      recargar(project);
     } catch (err) {
       estado.textContent = `no se ha subido: ${err.message}`;
       boton.disabled = false;
@@ -120,14 +124,13 @@ nueva?.title.addEventListener('input', () => {
 for (const [sel, ruta] of [['form.proyecto', 'projects'], ['form.foto', 'images']]) {
   document.querySelectorAll(sel).forEach((f) => {
     const boton = f.querySelector('button:not(.borrar)');
-    f.addEventListener('input', () => { boton.disabled = false; boton.textContent = 'guardar'; });
+    f.addEventListener('input', () => { boton.disabled = false; });
     f.addEventListener('submit', async (e) => {
       e.preventDefault();
       boton.disabled = true;
       try {
         await enviar(`/api/${ruta}/${f.dataset.id}`, 'PATCH', new FormData(f));
-        boton.textContent = 'guardado ✓';
-        if (ruta === 'projects') f.closest('li').dataset.title = f.title.value;
+        recargar(f.closest('details').id.slice(1));   // la línea de arriba (y el orden) cambian
       } catch (err) {
         boton.disabled = false;
         alert(`no se ha guardado: ${err.message}`);
@@ -161,7 +164,7 @@ document.querySelectorAll('.borrar-proyecto').forEach((b) => b.addEventListener(
   if (!confirm(`¿Borrar «${nombre}» entero (${n === 1 ? 'su foto' : `sus ${n} fotos`})? Deja de salir en la web (se puede recuperar pidiéndolo).`)) return;
   try {
     await enviar(`/api/projects/${b.dataset.id}`, 'DELETE');
-    location.reload();
+    recargar();
   } catch (err) { alert(`no se ha borrado: ${err.message}`); }
 }));
 
@@ -170,6 +173,6 @@ document.querySelectorAll('.borrar').forEach((b) => b.addEventListener('click', 
   if (!confirm(`¿Borrar esta foto?${ultima ? ' Es la única del proyecto: el proyecto también deja de salir.' : ''} Se puede recuperar pidiéndolo.`)) return;
   try {
     await enviar(`/api/images/${b.closest('form').dataset.id}`, 'DELETE');
-    location.reload();
+    recargar(b.closest('details').id.slice(1));
   } catch (err) { alert(`no se ha borrado: ${err.message}`); }
 }));
