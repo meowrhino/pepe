@@ -1,9 +1,11 @@
 // /admin/: subir fotos y corregir nombres, tags y fechas (el Worker, worker/index.mjs).
 // La foto se pasa en el navegador a webp ≤ 2000 px, q85, con lo de imgToWeb
 // (copiado de lasadcum, js/admin.js): HEIC con heic2any y TIFF con UTIF, que se
-// cargan solo si hacen falta. Safari no sabe hacer webp (ni en iPhone): ahí sale
-// jpg, que el Worker también acepta.
+// cargan solo si hacen falta. Safari no sabe hacer webp con canvas (ni ningún
+// navegador del iPhone): ahí lo hace js/webp/, el códec de Squoosh en wasm
+// (@jsquash/webp 1.5.0, Apache-2.0; como notas8 y lasadcum), y si no carga, sale jpg.
 const nueva = document.querySelector('form.nueva');
+const WEBP = new URL('webp/', document.currentScript.src);   // al lado de este fichero
 
 // las librerías de imgToWeb, con SRI para no ejecutar nada alterado
 const LIBS = {
@@ -48,6 +50,19 @@ async function abrir(file) {
   }
 }
 
+// el códec se carga la primera vez que hace falta (280 KB) y se queda
+let codec = null;
+async function webpWasm(c) {
+  codec ??= Promise.all([import(new URL('webp_enc.js', WEBP)), import(new URL('meta.js', WEBP))])
+    .then(async ([enc, meta]) => [await enc.default({ noInitialRun: true }), meta.defaultOptions])
+    .catch((e) => { codec = null; throw e; });
+  const [m, opciones] = await codec;
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height);
+  const out = m.encode(d.data, d.width, d.height, { ...opciones, quality: 85 });
+  if (!out?.byteLength) throw new Error('webp vacío');
+  return new Blob([out], { type: 'image/webp' });
+}
+
 async function comprimir(file) {
   const src = await abrir(file);
   const w0 = src.naturalWidth || src.width, h0 = src.naturalHeight || src.height;
@@ -58,6 +73,7 @@ async function comprimir(file) {
   ctx.drawImage(src, 0, 0, c.width, c.height);
   const blob = (tipo) => new Promise((ok) => c.toBlob(ok, tipo, 0.85));
   let b = await blob('image/webp');
+  if (b?.type !== 'image/webp') b = await webpWasm(c).catch((e) => { console.warn('sin webp en wasm:', e); return null; });
   if (b?.type !== 'image/webp') b = await blob('image/jpeg');
   if (!b) throw new Error('el navegador no ha podido hacer la imagen');
   return { b, w: c.width, h: c.height };

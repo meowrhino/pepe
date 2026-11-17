@@ -11,7 +11,8 @@ Es el patrón de **lasadcum** (JAMstack, `patrones.md` §10b) llevado a toda la 
 - **Los textos en D1** (`projects`, `images`; las tablas se crean solas) y **las fotos en R2**
   (`pepe-archive`, `<año>/<uuid>.webp`). A GitHub solo llega la copia del domingo (abajo).
 - **superpepe** (`/admin/`) con contraseña (secreto `PASSWORD`): la foto se comprime en el navegador
-  (imgToWeb: webp ≤ 2000 px, q85), pepe pone el proyecto, la fecha y los tags. Si el proyecto
+  (imgToWeb: webp ≤ 2000 px, q85; en Safari y el iPhone, que no saben hacer webp con canvas, con
+  el códec de Squoosh en wasm, `public/js/webp/`, `@jsquash/webp` 1.5.0, como lasadcum), pepe pone el proyecto, la fecha y los tags. Si el proyecto
   ya existe, la foto se le añade; cada proyecto tiene además su «+ añadir foto» (por su
   número) y «borrar proyecto» (= borrar todas sus fotos, blando). Ahí también elige el orden de la web (`settings.order` en
   D1: más reciente, el de por defecto; más antiguo; a–z).
