@@ -1,82 +1,17 @@
 // /admin/: subir fotos y corregir nombres, tags y fechas (el Worker, worker/index.mjs).
-// La foto se pasa en el navegador a webp ≤ 2000 px, q85, con lo de imgToWeb
-// (copiado de lasadcum, js/admin.js): HEIC con heic2any y TIFF con UTIF, que se
-// cargan solo si hacen falta. Safari no sabe hacer webp con canvas (ni ningún
-// navegador del iPhone): ahí lo hace js/webp/, el códec de Squoosh en wasm
-// (@jsquash/webp 1.5.0, Apache-2.0; como notas8 y lasadcum), y si no carga, sale jpg.
+// La foto se pasa en el navegador a webp ≤ 2000 px, q85, con el conversor de imgToWeb, que
+// se carga de su web: aquí no hay copia, y lo que cambie en meowrhino/imgToWeb
+// (js/converter.js) llega solo. Hace webp también en Safari y el iPhone (su códec en wasm);
+// si ni eso carga, sale jpg.
 const nueva = document.querySelector('form.nueva');
-const WEBP = new URL('webp/', document.currentScript.src);   // al lado de este fichero
-
-// las librerías de imgToWeb, con SRI para no ejecutar nada alterado
-const LIBS = {
-  heic2any: ['https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js',
-    'sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL'],
-  UTIF: ['https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js',
-    'sha384-RyBmXHdfZ/Uon+ud+/AqSyWpUWnKYt2tkRG/P4gWoRUGDU+qIAV3tGBPNlYTBZEF'],
-};
-const cargar = (nom) => window[nom] ? Promise.resolve(window[nom]) : new Promise((ok, ko) => {
-  const s = Object.assign(document.createElement('script'), { src: LIBS[nom][0], integrity: LIBS[nom][1], crossOrigin: 'anonymous' });
-  s.onload = () => ok(window[nom]);
-  s.onerror = () => { s.remove(); ko(new Error(`no se ha podido cargar ${nom}`)); };
-  document.head.append(s);
-});
-
-// con <img> el navegador aplica la orientación EXIF, como al mostrarla
-const leer = (blob) => new Promise((ok, ko) => {
-  const url = URL.createObjectURL(blob);
-  const img = new Image();
-  img.onload = () => { URL.revokeObjectURL(url); ok(img); };
-  img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('el navegador no sabe leer esta imagen')); };
-  img.src = url;
-});
-
-async function abrir(file) {
-  if (file.type === 'image/tiff' || /\.tiff?$/i.test(file.name)) {
-    const UTIF = await cargar('UTIF');
-    const buf = await file.arrayBuffer();
-    const [p] = UTIF.decode(buf);
-    if (!p) throw new Error('tiff sin imágenes');
-    UTIF.decodeImage(buf, p);
-    const c = Object.assign(document.createElement('canvas'), { width: p.width, height: p.height });
-    c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(UTIF.toRGBA8(p)), p.width, p.height), 0, 0);
-    return c;
-  }
-  try { return await leer(file); }
-  catch (e) {
-    // HEIC (fotos de iPhone): Safari lo lee; Chrome y Firefox, con heic2any
-    if (!/^image\/hei[cf]$/.test(file.type) && !/\.hei[cf]$/i.test(file.name)) throw e;
-    const out = await (await cargar('heic2any'))({ blob: file, toType: 'image/png' });
-    return leer(Array.isArray(out) ? out[0] : out);
-  }
-}
-
-// el códec se carga la primera vez que hace falta (280 KB) y se queda
-let codec = null;
-async function webpWasm(c) {
-  codec ??= Promise.all([import(new URL('webp_enc.js', WEBP)), import(new URL('meta.js', WEBP))])
-    .then(async ([enc, meta]) => [await enc.default({ noInitialRun: true }), meta.defaultOptions])
-    .catch((e) => { codec = null; throw e; });
-  const [m, opciones] = await codec;
-  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height);
-  const out = m.encode(d.data, d.width, d.height, { ...opciones, quality: 85 });
-  if (!out?.byteLength) throw new Error('webp vacío');
-  return new Blob([out], { type: 'image/webp' });
-}
+const IMGTOWEB = 'https://meowrhino.github.io/imgToWeb/js/converter.js';
 
 async function comprimir(file) {
-  const src = await abrir(file);
-  const w0 = src.naturalWidth || src.width, h0 = src.naturalHeight || src.height;
-  const k = Math.min(1, 2000 / Math.max(w0, h0));
-  const c = Object.assign(document.createElement('canvas'), { width: Math.max(1, Math.round(w0 * k)), height: Math.max(1, Math.round(h0 * k)) });
-  const ctx = c.getContext('2d');
-  ctx.imageSmoothingQuality = 'high';   // con el de por defecto, una reducción grande sale con dientes
-  ctx.drawImage(src, 0, 0, c.width, c.height);
-  const blob = (tipo) => new Promise((ok) => c.toBlob(ok, tipo, 0.85));
-  let b = await blob('image/webp');
-  if (b?.type !== 'image/webp') b = await webpWasm(c).catch((e) => { console.warn('sin webp en wasm:', e); return null; });
-  if (b?.type !== 'image/webp') b = await blob('image/jpeg');
-  if (!b) throw new Error('el navegador no ha podido hacer la imagen');
-  return { b, w: c.width, h: c.height };
+  const { convertToWebp } = await import(IMGTOWEB).catch(() => {
+    throw new Error('no se ha podido cargar el conversor (imgToWeb); recarga la página');
+  });
+  const { blob, dimensions } = await convertToWebp(file, { quality: 0.85, maxDimension: 2000, jpegFallback: true });
+  return { b: blob, w: dimensions.width, h: dimensions.height };
 }
 
 // tras guardar, subir o borrar se recarga con ese proyecto abierto (#p<n>, en worker/paginas.mjs)
