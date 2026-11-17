@@ -103,6 +103,7 @@ ${intro || `<h1 class="oculto">${esc(site.title)}</h1>\n`}<main>
 ${archivo(proyectos)}
 </ol>
 </main>
+<footer class="firma">web: <a href="https://meowrhino.studio">meowrhino.studio</a></footer>
 <figure class="preview" hidden><img alt=""></figure>
 <script src="/js/main.js" defer></script>
 </body>

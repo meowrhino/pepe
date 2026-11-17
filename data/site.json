@@ -1,4 +1,5 @@
 {
+  "$schema": "../schema/site.json",
   "title": "pepe",
   "description": "archive",
   "url": "",

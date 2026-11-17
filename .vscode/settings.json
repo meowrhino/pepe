@@ -1,0 +1,10 @@
+{
+  // Sync: si en GitHub hay un commit que aquí no está (la copia del domingo), el tuyo se
+  // pone encima sin preguntar. Y no bajar etiquetas, que git no se queje.
+  "git.rebaseWhenSync": true,
+  "git.pullTags": false,
+  // archive.json es una lista: no puede llevar "$schema" dentro
+  "json.schemas": [
+    { "fileMatch": ["data/archive.json"], "url": "./schema/archive.json" }
+  ]
+}

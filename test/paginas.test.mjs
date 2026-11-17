@@ -54,6 +54,7 @@ test('sin intro no sale el bloque pepe; sin url, noindex', () => {
   assert.doesNotMatch(portada(site, []), /class="intro"/);
   assert.match(portada(site, []), /noindex/);
   assert.match(portada({ ...site, intro: ['hola'] }, []), /<h1>pepe<\/h1>\n<p>hola<\/p>/);
+  assert.match(portada(site, []), /web: <a href="https:\/\/meowrhino\.studio">meowrhino\.studio<\/a>/);   // la firma (receta 18)
 });
 
 test('el salto a la lista del móvil: cuando nombre + tags + fechas ya no caben; nunca por debajo de 760px', () => {

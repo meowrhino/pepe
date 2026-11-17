@@ -3,6 +3,9 @@
   "private": true,
   "description": "El archivo de pepe: un Worker con D1 (los textos) y R2 (las fotos), y /admin/ para subirlas",
   "type": "module",
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
     "dev": "npx wrangler@4 dev",
     "deploy": "npx wrangler@4 deploy",

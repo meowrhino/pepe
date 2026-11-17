@@ -1,4 +1,4 @@
-// Sube las fotos de data/seed.json (las primeras, del RTF de pepe del 6 de
+// Sube las fotos de tools/seed.json (las primeras, del RTF de pepe del 6 de
 // noviembre de 2026) por la misma API que usa /admin/, así entran igual que las
 // que suba él. Las pasa antes a webp ≤ 2000 px, q85 (lo de imgToWeb), con sharp.
 //
@@ -28,7 +28,7 @@ const login = await fetch(`${origin}/api/login`, {
 const sesion = login.headers.getSetCookie().find((c) => c.startsWith('pepe='))?.split(';')[0];
 if (!sesion) throw new Error(`no he podido entrar (${login.status})`);
 
-const filas = JSON.parse(await readFile(join(raiz, 'data/seed.json'), 'utf8'));
+const filas = JSON.parse(await readFile(join(raiz, 'tools/seed.json'), 'utf8'));
 for (const [n, f] of filas.entries()) {
   const { data, info } = await sharp(join(carpeta, f.file)).rotate()
     .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
