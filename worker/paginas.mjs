@@ -38,6 +38,25 @@ function fila(p) {
 
 export const archivo = (proyectos) => proyectos.map(fila).join('\n');
 
+/** Lo que miden, en letras (la letra es monoespaciada), el nombre y los tags más largos y las
+ *  fechas, hasta tres (2025.01.08 / … son 13 por fecha; con más, se parten). */
+export function medidas(proyectos) {
+  const largo = (xs) => Math.max(0, ...xs.map((x) => [...x].length));
+  return {
+    t: largo(proyectos.map((p) => p.title)),
+    g: largo(proyectos.map((p) => (p.tags ? `#${p.tags.replaceAll(' ', ' #')}` : ''))),
+    d: Math.min(3, Math.max(1, ...proyectos.map((p) => p.images.length))) * 13 - 3,
+  };
+}
+
+/** Desde qué ancho la portada pasa a la lista del móvil (nombre arriba; tags y fechas debajo): cuando
+ *  las tres columnas ya no caben. Cada letra, .62em (.6 de la letra + .02 de letter-spacing) y algo
+ *  de margen; 8em, el padding del body; nunca por debajo de 760px (47.5em), donde cambia la letra. */
+export function salto({ t, g, d }) {
+  const letras = t + Math.max(g, 12) + d + 2 * 4;   // los tags miden 12 como poco; 4 de hueco entre columnas
+  return Math.max(47.5, Math.ceil(8 + letras * 0.625 + 1));
+}
+
 /** Los órdenes que pepe elige en superpepe (D1 → settings.order). Dentro de un proyecto, las fechas van siempre de la más antigua a la más nueva. */
 export const ORDENES = {
   reciente: { nombre: 'más reciente', cmp: (a, b) => b.images.at(-1).date.localeCompare(a.images.at(-1).date) || b.id - a.id },
@@ -46,7 +65,7 @@ export const ORDENES = {
 };
 export const ordenar = (proyectos, orden) => [...proyectos].sort((ORDENES[orden] ?? ORDENES.reciente).cmp);
 
-function cabeza(site, titulo, { index = true } = {}) {
+function cabeza(site, titulo, { index = true, estilo = '' } = {}) {
   const robots = site.url && index ? '' : '\n<meta name="robots" content="noindex">';
   return `<!doctype html>
 <html lang="es">
@@ -56,7 +75,7 @@ function cabeza(site, titulo, { index = true } = {}) {
 <title>${esc(titulo)}</title>
 <meta name="description" content="${esc(site.description)}">${robots}
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/style.css">${estilo}
 </head>`;
 }
 
@@ -65,7 +84,18 @@ export function portada(site, proyectos) {
   const intro = site.intro?.length
     ? `<header class="intro">\n<h1>${esc(site.title)}</h1>\n${site.intro.map((p) => `<p>${esc(p)}</p>`).join('\n')}\n</header>\n`
     : '';
-  return `${cabeza(site, site.title)}
+  // la lista del móvil, desde el ancho en que las columnas ya no caben (en el css no se puede calcular)
+  const estilo = `
+<style>
+@media (max-width: ${salto(medidas(proyectos))}em) {
+  .archive { grid-template-columns: 1fr auto auto; column-gap: 2ch; }
+  .archive .title { grid-column: 1 / -1; }
+  .archive .tags { grid-column: 2; color: var(--gris); }
+  .archive .dates { grid-column: 3; text-align: right; }
+  .archive .tags, .archive .dates { margin-bottom: .6em; }
+}
+</style>`;
+  return `${cabeza(site, site.title, { estilo })}
 <body>
 ${intro || `<h1 class="oculto">${esc(site.title)}</h1>\n`}<main>
 <h2>archive</h2>
@@ -83,11 +113,9 @@ export function admin(site, proyectos, hoy, orden) {
   const titulos = [...new Set(proyectos.map((p) => p.title))];
   const fotos = proyectos.reduce((n, p) => n + p.images.length, 0);
   const elegido = ORDENES[orden] ? orden : 'reciente';
-  // la columna del nombre y la de los tags miden lo que el más largo, como en la web (letra monoespaciada)
-  const ancho = (xs) => Math.min(60, Math.max(4, ...xs.map((x) => [...x].length)));
-  // y la de las fechas, hasta tres (2025.01.08 / … son 13 por fecha); con más, se parten
-  const fechas = Math.min(3, Math.max(1, ...proyectos.map((p) => p.images.length))) * 13 - 3;
-  const cols = `--t:${ancho(proyectos.map((p) => p.title))};--g:${ancho(proyectos.map((p) => tagsHtml(p.tags).replace(/&#?\w+;/g, '_')))};--d:${fechas}`;
+  // las columnas miden lo que el más largo, como en la web
+  const { t, g, d } = medidas(proyectos);
+  const cols = `--t:${Math.min(60, Math.max(4, t))};--g:${Math.max(4, g)};--d:${d}`;
   // una línea por proyecto, como en la web; al tocarla se abre con todo lo de editar.
   // data-title, para el buscador; id p<n>, para volver a abrirla tras guardar (public/js/admin.js)
   const lista = proyectos.map((p) => `<li data-title="${esc(p.title)}">

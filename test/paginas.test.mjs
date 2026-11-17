@@ -1,7 +1,7 @@
 // node --test: lo que pinta el archivo, sin Cloudflare
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { agrupar, limpiarTags, archivo, portada, ordenar, admin } from '../worker/paginas.mjs';
+import { agrupar, limpiarTags, archivo, portada, ordenar, admin, medidas, salto } from '../worker/paginas.mjs';
 
 const filas = [
   { pid: 1, title: 'calçotada <b>', tags: 'paperwork', id: 1, date: '2024-12-31', image_key: 'a.webp', width: 10, height: 20 },
@@ -54,4 +54,11 @@ test('sin intro no sale el bloque pepe; sin url, noindex', () => {
   assert.doesNotMatch(portada(site, []), /class="intro"/);
   assert.match(portada(site, []), /noindex/);
   assert.match(portada({ ...site, intro: ['hola'] }, []), /<h1>pepe<\/h1>\n<p>hola<\/p>/);
+});
+
+test('el salto a la lista del móvil: cuando nombre + tags + fechas ya no caben; nunca por debajo de 760px', () => {
+  assert.deepEqual(medidas(agrupar(filas)), { t: 13, g: 10, d: 23 });
+  assert.equal(salto({ t: 13, g: 10, d: 23 }), 47.5);
+  assert.equal(salto({ t: 51, g: 5, d: 10 }), 60);   // los nombres de pepe (2026-11): 960px
+  assert.match(portada({ title: 'pepe', intro: [] }, agrupar(filas)), /@media \(max-width: 47\.5em\)/);
 });

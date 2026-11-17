@@ -31,7 +31,8 @@ h1, h2 {
 .archive {
   list-style: none; margin: 0; padding: 0;
   display: grid;
-  grid-template-columns: max-content minmax(12ch, max-content) 1fr;
+  /* minmax(0, …): si aun así no cabe (otra letra más ancha), se parte el nombre, nunca las fechas */
+  grid-template-columns: minmax(0, max-content) minmax(12ch, max-content) 1fr;
   column-gap: 4ch;
 }
 .archive li { display: contents; }
@@ -62,12 +63,9 @@ h1, h2 {
 
 @media (max-width: 760px) {
   body { padding: 2rem 1rem 4rem; font-size: 14px; }
-  /* en el móvil: el nombre en una línea; debajo, a la derecha, los tags y las fechas */
-  .archive { grid-template-columns: 1fr auto auto; column-gap: 2ch; }
-  .archive .title { grid-column: 1 / -1; }
-  .archive .tags { grid-column: 2; color: var(--gris); }
-  .archive .dates { grid-column: 3; text-align: right; }
-  .archive .tags, .archive .dates { margin-bottom: .6em; }
+  /* la lista del móvil (el nombre arriba; tags y fechas debajo) va en la portada, en un <style>:
+     salta en cuanto las tres columnas no caben, y eso depende de lo largo de los nombres
+     (worker/paginas.mjs → salto) */
   .preview.fija { padding: 1rem; }
 }
 
