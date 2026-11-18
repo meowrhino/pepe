@@ -178,6 +178,16 @@ form.foto, .si-foto { display: grid; gap: .5rem; }
 .anadir .previa { height: 8rem; max-height: none; }
 .admin .pie { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.25rem; color: var(--gris); }
 
+/* la papelera, abajo del todo: lo borrado, en gris, con «recuperar» */
+.papelera { margin-top: 4rem; color: var(--gris); }
+.papelera > summary { display: inline-block; cursor: pointer; padding: .3rem 0; }
+.papelera > summary:hover { color: var(--fg); text-decoration: underline; }
+.papelera .nota { margin-top: .75rem; }
+.papelera .fotos > li { gap: .35rem; }
+.papelera .fotos .nota { margin-top: 0; }
+.papelera img { opacity: .55; border-radius: 6px; background: var(--raya); object-fit: cover; }
+.papelera .title, .papelera .recuperar { color: var(--fg); }
+
 /* /login/ */
 .login { max-width: 26rem; padding-top: 6rem; }
 .login h1 { margin-bottom: 2rem; }

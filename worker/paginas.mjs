@@ -27,6 +27,18 @@ export function agrupar(filas) {
   return [...porId.values()];
 }
 
+/** Lo borrado (filas de D1, lo último primero) → un grupo por cada vez que se borró: una foto, o un
+ *  proyecto entero (sus fotos llevan la misma hora). id: una foto del grupo, para recuperarlo. */
+export function papelera(filas) {
+  const grupos = new Map();
+  for (const f of filas) {
+    const k = `${f.pid} ${f.deleted_at}`;
+    if (!grupos.has(k)) grupos.set(k, { id: f.id, title: f.title, deleted: f.deleted_at, images: [] });
+    grupos.get(k).images.push({ date: f.date, src: `/media/${f.image_key}`, width: f.width, height: f.height });
+  }
+  return [...grupos.values()];
+}
+
 const tagsHtml = (tags) => (tags ? tags.split(' ').map((t) => `#${esc(t)}`).join(' ') : '');
 
 function fila(p) {
@@ -110,7 +122,7 @@ ${archivo(proyectos)}
 </html>`;
 }
 
-export function admin(site, proyectos, hoy, orden) {
+export function admin(site, proyectos, hoy, orden, borrado = []) {
   const titulos = [...new Set(proyectos.map((p) => p.title))];
   const fotos = proyectos.reduce((n, p) => n + p.images.length, 0);
   const elegido = ORDENES[orden] ? orden : 'reciente';
@@ -183,7 +195,19 @@ ${Object.entries(ORDENES).map(([k, o]) => `<button type="button" data-orden="${k
 <ol class="proyectos" style="${cols}">
 ${lista}
 </ol>
-<script src="/js/admin.js" defer></script>
+${borrado.length ? `<details class="papelera">
+<summary>papelera (${borrado.length})</summary>
+<p class="nota">Lo que has borrado: no sale en la web. «recuperar» lo vuelve a poner como estaba.</p>
+<ul class="fotos">
+${borrado.map((b) => `<li>
+<img src="${esc(b.images[0].src)}" alt="" loading="lazy" width="${b.images[0].width}" height="${b.images[0].height}">
+<p><span class="title">${esc(b.title)}</span><br>${b.images.map((i) => fecha(i.date)).join(' / ')}</p>
+<p class="nota">${b.images.length === 1 ? '' : `${b.images.length} fotos · `}borrado el ${fecha(b.deleted.slice(0, 10))}</p>
+<div class="botones"><button type="button" class="recuperar" data-id="${b.id}">recuperar</button></div>
+</li>`).join('\n')}
+</ul>
+</details>
+` : ''}<script src="/js/admin.js" defer></script>
 </body>
 </html>`;
 }

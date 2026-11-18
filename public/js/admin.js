@@ -112,7 +112,7 @@ document.querySelector('.buscar')?.addEventListener('input', (e) => {
 
 document.querySelectorAll('.borrar-proyecto').forEach((b) => b.addEventListener('click', async () => {
   const nombre = b.closest('li').dataset.title, n = Number(b.dataset.n);
-  if (!confirm(`¿Borrar «${nombre}» entero (${n === 1 ? 'su foto' : `sus ${n} fotos`})? Deja de salir en la web (se puede recuperar pidiéndolo).`)) return;
+  if (!confirm(`¿Borrar «${nombre}» entero (${n === 1 ? 'su foto' : `sus ${n} fotos`})? Deja de salir en la web y va a la papelera, abajo del todo.`)) return;
   try {
     await enviar(`/api/projects/${b.dataset.id}`, 'DELETE');
     recargar();
@@ -121,9 +121,21 @@ document.querySelectorAll('.borrar-proyecto').forEach((b) => b.addEventListener(
 
 document.querySelectorAll('.borrar').forEach((b) => b.addEventListener('click', async () => {
   const ultima = b.closest('.fotos').querySelectorAll('form.foto').length === 1;
-  if (!confirm(`¿Borrar esta foto?${ultima ? ' Es la única del proyecto: el proyecto también deja de salir.' : ''} Se puede recuperar pidiéndolo.`)) return;
+  if (!confirm(`¿Borrar esta foto?${ultima ? ' Es la única del proyecto: el proyecto también deja de salir.' : ''} Va a la papelera, abajo del todo.`)) return;
   try {
     await enviar(`/api/images/${b.closest('form').dataset.id}`, 'DELETE');
     recargar(b.closest('details').id.slice(1));
   } catch (err) { alert(`no se ha borrado: ${err.message}`); }
+}));
+
+// la papelera: «recuperar» deshace ese borrado (la foto, o el proyecto entero) y lo abre
+document.querySelectorAll('.recuperar').forEach((b) => b.addEventListener('click', async () => {
+  b.disabled = true;
+  try {
+    const { project } = await (await enviar(`/api/images/${b.dataset.id}/recuperar`, 'POST')).json();
+    recargar(project);
+  } catch (err) {
+    b.disabled = false;
+    alert(`no se ha recuperado: ${err.message}`);
+  }
 }));

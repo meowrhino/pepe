@@ -41,6 +41,7 @@ los tags.
 | la fecha de una foto | la fecha debajo de la foto | **guardar** (debajo) |
 | quitar una foto | **borrar**, debajo de la foto | pide confirmación |
 | quitar un proyecto entero | **borrar proyecto**, abajo | pide confirmación |
+| deshacer un borrado | **papelera**, abajo del todo → **recuperar** | vuelve a la web |
 
 **guardar** se enciende cuando cambias algo; al guardarlo, la página se recarga con el
 proyecto abierto y el cambio ya está en la lista y en la web. Dos
@@ -50,9 +51,10 @@ proyectos no pueden llamarse igual: si lo intentas, te lo dice.
 - Un proyecto existe mientras tenga alguna foto. Si le borras la última, deja de salir
   (te avisa antes).
 - **borrar proyecto** borra todas sus fotos de golpe: es lo mismo.
-- **Nada se borra para siempre**: deja de salir en la web, pero se guarda. Si te equivocas,
-  pídenoslo y lo recuperamos. Si luego subes una foto con el nombre de un proyecto borrado,
-  vuelve con esa foto sola (y sus tags).
+- **Nada se borra para siempre**: deja de salir en la web y va a la **papelera**, abajo del
+  todo de superpepe. Si te equivocas, ábrela y toca **recuperar**: vuelve como estaba (un
+  proyecto entero, con todas sus fotos). Si luego subes una foto con el nombre de un proyecto
+  borrado, vuelve con esa foto sola (y sus tags); las otras siguen en la papelera.
 
 ## 3. El orden
 

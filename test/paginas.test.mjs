@@ -1,7 +1,7 @@
 // node --test: lo que pinta el archivo, sin Cloudflare
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { agrupar, limpiarTags, archivo, portada, ordenar, admin, medidas, salto } from '../worker/paginas.mjs';
+import { agrupar, limpiarTags, archivo, portada, ordenar, admin, medidas, salto, papelera } from '../worker/paginas.mjs';
 
 const filas = [
   { pid: 1, title: 'calçotada <b>', tags: 'paperwork', id: 1, date: '2024-12-31', image_key: 'a.webp', width: 10, height: 20 },
@@ -62,4 +62,21 @@ test('el salto a la lista del móvil: cuando nombre + tags + fechas ya no caben;
   assert.equal(salto({ t: 13, g: 10, d: 23 }), 47.5);
   assert.equal(salto({ t: 51, g: 5, d: 10 }), 60);   // los nombres de pepe (2026-11): 960px
   assert.match(portada({ title: 'pepe', intro: [] }, agrupar(filas)), /@media \(max-width: 47\.5em\)/);
+});
+
+test('papelera: un grupo por borrado (un proyecto entero va junto) y sale abajo de superpepe solo si hay algo', () => {
+  const t1 = '2026-11-12T15:26:24.314Z', t2 = '2026-11-10T10:00:00.000Z';
+  const b = papelera([
+    { pid: 1, title: 'calçotada <b>', id: 4, date: '2025-01-01', image_key: 'd.webp', width: 1, height: 1, deleted_at: t1 },
+    { pid: 1, title: 'calçotada <b>', id: 5, date: '2025-01-03', image_key: 'e.webp', width: 1, height: 1, deleted_at: t1 },
+    { pid: 1, title: 'calçotada <b>', id: 6, date: '2025-01-02', image_key: 'f.webp', width: 1, height: 1, deleted_at: t2 },
+  ]);
+  assert.deepEqual(b.map((g) => [g.id, g.images.length]), [[4, 2], [6, 1]]);
+  const site = { title: 'pepe', description: '', intro: [] };
+  const h = admin(site, agrupar(filas), '2026-11-12', 'reciente', b);
+  assert.match(h, /<summary>papelera \(2\)<\/summary>/);
+  assert.match(h, /data-id="4">recuperar/);
+  assert.match(h, /2 fotos · borrado el 2026\.11\.12/);
+  assert.match(h, /calçotada &lt;b&gt;<\/span><br>2025\.01\.01 \/ 2025\.01\.03/);
+  assert.doesNotMatch(admin(site, agrupar(filas), '2026-11-12', 'reciente'), /papelera/);
 });

@@ -6,7 +6,7 @@
 
      /           el archivo, dentro del HTML (se lee sin JS)
      /admin/     subir fotos y corregir nombres, tags y fechas
-     /api/*      login, logout, archive, images, projects, export
+     /api/*      login, logout, archive, images (y recuperar), projects, export
      /media/*    las fotos, de R2
 
    Los textos en D1 (las tablas se crean solas) y las fotos en R2.
@@ -15,7 +15,7 @@
    Es el patrón de lasadcum (JAMstack, patrones §10b).
    ============================================================ */
 import site from '../data/site.json';
-import { agrupar, limpiarTags, portada, admin, ordenar, ORDENES } from './paginas.mjs';
+import { agrupar, limpiarTags, portada, admin, ordenar, ORDENES, papelera } from './paginas.mjs';
 
 const SESION = 'pepe';
 const DIAS = 60;
@@ -57,6 +57,11 @@ const fotos = async (env) => agrupar((await (await db(env)).prepare(
   `SELECT p.id AS pid, p.title, p.tags, i.id, i.date, i.image_key, i.width, i.height
    FROM images i JOIN projects p ON p.id = i.project_id
    WHERE i.deleted_at IS NULL ORDER BY i.date, i.id`).all()).results);
+// la papelera de superpepe: lo borrado, lo último primero
+const borrado = async (env) => papelera((await (await db(env)).prepare(
+  `SELECT p.id AS pid, p.title, i.id, i.date, i.image_key, i.width, i.height, i.deleted_at
+   FROM images i JOIN projects p ON p.id = i.project_id
+   WHERE i.deleted_at IS NOT NULL ORDER BY i.deleted_at DESC, i.date, i.id`).all()).results);
 
 /* ---------- la sesión: una cookie con la hora, firmada con la contraseña ---------- */
 async function firmar(env, msg) {
@@ -185,14 +190,28 @@ async function borrarFoto(id, env) {
   return r.meta.changes ? Response.json({ ok: true }) : texto('no está', 404);
 }
 
-async function media(key, env) {
+// recuperar deshace un borrado entero: la foto, o todas las del proyecto si se borró el proyecto
+// (borrarProyecto les pone a todas la misma hora). Vuelve como estaba, con su nombre y sus tags.
+async function recuperar(id, env) {
+  const d1 = await db(env);
+  const f = await d1.prepare('SELECT i.project_id, i.deleted_at, p.title FROM images i JOIN projects p ON p.id = i.project_id WHERE i.id = ? AND i.deleted_at IS NOT NULL').bind(id).first();
+  if (!f) return texto('no está en la papelera', 404);
+  // mientras estaba borrado, otro proyecto ha podido quedarse con su nombre
+  const otro = await d1.prepare(`SELECT 1 FROM projects p WHERE title = ? COLLATE NOCASE AND id <> ? AND ${VIVO}`).bind(f.title, f.project_id).first();
+  if (otro) throw new Aviso(`ya hay otro proyecto que se llama «${f.title}»: cámbiale el nombre a ese y vuelve a probar`);
+  const r = await d1.prepare('UPDATE images SET deleted_at = NULL WHERE project_id = ? AND deleted_at = ?').bind(f.project_id, f.deleted_at).run();
+  return Response.json({ project: f.project_id, fotos: r.meta.changes });
+}
+
+async function media(key, req, env) {
   const viva = await (await db(env)).prepare('SELECT 1 FROM images WHERE image_key = ? AND deleted_at IS NULL').bind(key).first();
-  const o = viva && await env.MEDIA.get(key);
+  // una foto borrada solo la ve pepe, en la papelera de superpepe
+  const o = (viva || await dentro(req, env)) && await env.MEDIA.get(key);
   if (!o) return texto('no está', 404);
   const headers = new Headers();
   o.writeHttpMetadata(headers);
   headers.set('etag', o.httpEtag);
-  headers.set('cache-control', 'public, max-age=31536000, immutable');
+  headers.set('cache-control', viva ? 'public, max-age=31536000, immutable' : 'private, no-store');
   headers.set('x-content-type-options', 'nosniff');
   return new Response(o.body, { headers });
 }
@@ -204,7 +223,7 @@ export default {
     try {
       if (p === '/') return html(portada(site, await archivo(env)));
       // las claves (2025/<uuid>.webp) no llevan nada que descodificar
-      if (p.startsWith('/media/') && (m === 'GET' || m === 'HEAD')) return media(p.slice(7), env);
+      if (p.startsWith('/media/') && (m === 'GET' || m === 'HEAD')) return media(p.slice(7), req, env);
       if (p === '/api/archive' && m === 'GET') return Response.json(await archivo(env));
       if (p === '/api/login' && m === 'POST') return login(req, env);
       if (p === '/api/logout' && m === 'POST') return ir('/', { 'set-cookie': cookie('', 0) });
@@ -214,7 +233,7 @@ export default {
       const ok = await dentro(req, env);
       // «hoy» en la hora de pepe: en UTC, de 0 a 1 (2 en verano) salía la fecha de ayer
       const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-      if (p === '/admin/') return ok ? html(admin(site, await archivo(env), hoy, await orden(env))) : ir('/login/');
+      if (p === '/admin/') return ok ? html(admin(site, await archivo(env), hoy, await orden(env), await borrado(env))) : ir('/login/');
       if (!p.startsWith('/api/')) return env.ASSETS.fetch(req);
       if (!ok) return texto('hay que entrar con la contraseña (vuelve a /admin/)', 401);
       if (p === '/api/export' && m === 'GET') {
@@ -229,6 +248,8 @@ export default {
       if (tipo === 'projects' && m === 'DELETE') return await borrarProyecto(Number(id), env);
       if (tipo === 'images' && m === 'PATCH') return await editarFoto(Number(id), req, env);
       if (tipo === 'images' && m === 'DELETE') return await borrarFoto(Number(id), env);
+      const [, rid] = /^\/api\/images\/(\d+)\/recuperar$/.exec(p) || [];
+      if (rid && m === 'POST') return await recuperar(Number(rid), env);
       if (p === '/api/settings' && m === 'PATCH') {
         const o = String((await req.formData()).get('order') || '');
         // con hasOwn: ORDENES['toString'] también existe
